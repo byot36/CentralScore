@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.dietaapp.dieta_app",
+      "sha256_cert_fingerprints": [
+        "42:A1:0F:90:83:0C:D8:6F:0D:85:86:85:96:B9:C9:BD:11:1F:C9:73:B7:C2:72:18:FD:E8:ED:8B:05:C0:02:54"
+      ]
+    }
+  }
+]
