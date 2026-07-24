@@ -6,12 +6,13 @@ export interface AppNotification {
   body: string;
   createdAt: string;
   read: boolean;
+  url?: string;
 }
 
 interface NotificationsContextValue {
   notifications: AppNotification[];
   unreadCount: number;
-  addNotification: (title: string, body: string) => void;
+  addNotification: (title: string, body: string, url?: string) => void;
   markAllRead: () => void;
   clearAll: () => void;
 }
@@ -33,9 +34,9 @@ export function NotificationsProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(notifications.slice(0, 100)));
   }, [notifications]);
 
-  function addNotification(title: string, body: string) {
+  function addNotification(title: string, body: string, url?: string) {
     setNotifications((prev) => [
-      { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, title, body, createdAt: new Date().toISOString(), read: false },
+      { id: `${Date.now()}-${Math.random().toString(36).slice(2)}`, title, body, createdAt: new Date().toISOString(), read: false, url },
       ...prev,
     ]);
   }

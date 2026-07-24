@@ -40,7 +40,7 @@ export default function Layout() {
   useEffect(() => {
     if (!update) return;
     const body = `Versiunea ${update.version} este disponibilă. Apasă pentru a actualiza.`;
-    addNotification('Actualizare CentralScore disponibilă', body);
+    addNotification('Actualizare CentralScore disponibilă', body, update.downloadUrl);
     if (isNative) {
       LocalNotifications.checkPermissions().then((p) => {
         if (p.display === 'granted') {

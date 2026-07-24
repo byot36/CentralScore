@@ -1,5 +1,17 @@
 import { useEffect } from 'react';
+import { Browser } from '@capacitor/browser';
+import { Capacitor } from '@capacitor/core';
 import { useNotifications } from '../context/NotificationsContext';
+
+const isNative = Capacitor.isNativePlatform();
+
+function openUrl(url: string) {
+  if (isNative) {
+    Browser.open({ url });
+  } else {
+    window.open(url, '_blank', 'noopener,noreferrer');
+  }
+}
 
 export default function Notifications() {
   const { notifications, markAllRead, clearAll } = useNotifications();
@@ -25,7 +37,11 @@ export default function Notifications() {
       ) : (
         <ul className="space-y-2">
           {notifications.map((n) => (
-            <li key={n.id} className="bg-[#111827] border border-white/10 rounded-lg p-3">
+            <li
+              key={n.id}
+              onClick={n.url ? () => openUrl(n.url!) : undefined}
+              className={`bg-[#111827] border border-white/10 rounded-lg p-3 ${n.url ? 'cursor-pointer hover:border-[#00c853]/50' : ''}`}
+            >
               <div className="flex items-start gap-3">
                 <span className="text-lg shrink-0">⚽</span>
                 <div className="flex-1 min-w-0">
@@ -34,6 +50,7 @@ export default function Notifications() {
                   <p className="text-xs text-gray-500 mt-1">
                     {new Date(n.createdAt).toLocaleString('ro-RO')}
                   </p>
+                  {n.url && <p className="text-xs text-[#00c853] mt-1">Apasă pentru a actualiza →</p>}
                 </div>
               </div>
             </li>
