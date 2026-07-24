@@ -6,6 +6,8 @@ import { useNotifications } from '../context/NotificationsContext';
 import { useMatches } from '../context/MatchesContext';
 import { useFavoriteAlerts, requestNotificationPermission } from '../hooks/useFavoriteAlerts';
 import { useLiveEventAlerts } from '../hooks/useLiveEventAlerts';
+import { useAppUpdateCheck } from '../hooks/useAppUpdateCheck';
+import { Browser } from '@capacitor/browser';
 
 const NAV_LINKS = [
   { to: '/', label: 'Meciuri' },
@@ -21,6 +23,7 @@ export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false);
   useFavoriteAlerts(matches, favorites, addNotification);
   useLiveEventAlerts(matches, favorites, addNotification);
+  const update = useAppUpdateCheck();
 
   useEffect(() => {
     requestNotificationPermission();
@@ -86,6 +89,17 @@ export default function Layout() {
         {!isLiveApiConfigured && (
           <div className="bg-amber-500/10 text-amber-300 text-xs text-center py-1 px-4">
             Mod demo — date de exemplu. Conectează Worker-ul pentru date live.
+          </div>
+        )}
+        {update && (
+          <div className="bg-[#00c853]/10 text-[#00c853] text-xs text-center py-1.5 px-4 flex items-center justify-center gap-3">
+            <span>Versiune nouă disponibilă: v{update.version}</span>
+            <button
+              onClick={() => Browser.open({ url: update.downloadUrl })}
+              className="bg-[#00c853] text-black font-medium px-2.5 py-0.5 rounded-full"
+            >
+              Actualizează
+            </button>
           </div>
         )}
       </header>
