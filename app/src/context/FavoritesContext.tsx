@@ -2,8 +2,8 @@ import { createContext, useContext, useEffect, useState, type ReactNode } from '
 
 interface FavoritesContextValue {
   favorites: string[];
-  toggleFavorite: (teamId: string) => void;
-  isFavorite: (teamId: string) => boolean;
+  toggleFavorite: (matchId: string) => void;
+  isFavorite: (matchId: string) => boolean;
 }
 
 const FavoritesContext = createContext<FavoritesContextValue | null>(null);
@@ -24,14 +24,14 @@ export function FavoritesProvider({ children }: { children: ReactNode }) {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(favorites));
   }, [favorites]);
 
-  function toggleFavorite(teamId: string) {
+  function toggleFavorite(matchId: string) {
     setFavorites((prev) =>
-      prev.includes(teamId) ? prev.filter((id) => id !== teamId) : [...prev, teamId]
+      prev.includes(matchId) ? prev.filter((id) => id !== matchId) : [...prev, matchId]
     );
   }
 
-  function isFavorite(teamId: string) {
-    return favorites.includes(teamId);
+  function isFavorite(matchId: string) {
+    return favorites.includes(matchId);
   }
 
   return (

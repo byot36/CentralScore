@@ -25,19 +25,28 @@ export default function MatchCard({ match }: { match: Match }) {
   const finished = match.status === 'finished';
   const homeWon = finished && match.homeScore > match.awayScore;
   const awayWon = finished && match.awayScore > match.homeScore;
-  const homeFav = isFavorite(match.homeTeam.id);
-  const awayFav = isFavorite(match.awayTeam.id);
+  const fav = isFavorite(match.id);
 
   return (
     <Link
       to={`/match/${match.id}`}
-      className={`block rounded-lg px-4 py-3 border transition-colors ${
+      className={`block rounded-lg px-4 py-3 border transition-colors relative ${
         finished
           ? 'bg-[#0d1420] border-white/5 hover:border-white/15'
           : 'bg-[#111827] border-white/10 hover:border-[#00c853]/50'
       }`}
     >
-      <div className="flex items-center justify-between text-xs mb-3">
+      <button
+        onClick={(e) => {
+          e.preventDefault();
+          toggleFavorite(match.id);
+        }}
+        className={`absolute top-3 right-3 text-base leading-none ${fav ? 'text-yellow-400' : 'text-gray-600'}`}
+        aria-label={`Favorite ${match.homeTeam.name} - ${match.awayTeam.name}`}
+      >
+        ★
+      </button>
+      <div className="flex items-center justify-between text-xs mb-3 pr-5">
         <span>
           {match.status === 'live' ? (
             <span className="text-[#00c853] font-semibold">● Live · {match.minute}'</span>
@@ -48,7 +57,7 @@ export default function MatchCard({ match }: { match: Match }) {
           )}
         </span>
       </div>
-      <div className="flex items-center justify-between gap-2">
+      <div className="flex items-center justify-between gap-2 pr-5">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <TeamCrest logo={match.homeTeam.logo} name={match.homeTeam.name} />
           <span className={`font-medium truncate ${finished && !homeWon ? 'text-gray-500' : ''}`}>{match.homeTeam.name}</span>
@@ -56,18 +65,8 @@ export default function MatchCard({ match }: { match: Match }) {
         <span className={`font-bold text-lg tabular-nums shrink-0 ${finished && !homeWon ? 'text-gray-500' : ''}`}>
           {match.status === 'scheduled' ? '-' : match.homeScore}
         </span>
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            toggleFavorite(match.homeTeam.id);
-          }}
-          className={`text-base leading-none shrink-0 ${homeFav ? 'text-yellow-400' : 'text-gray-600'}`}
-          aria-label={`Favorite ${match.homeTeam.name}`}
-        >
-          ★
-        </button>
       </div>
-      <div className="flex items-center justify-between gap-2 mt-2">
+      <div className="flex items-center justify-between gap-2 mt-2 pr-5">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <TeamCrest logo={match.awayTeam.logo} name={match.awayTeam.name} />
           <span className={`font-medium truncate ${finished && !awayWon ? 'text-gray-500' : ''}`}>{match.awayTeam.name}</span>
@@ -75,16 +74,6 @@ export default function MatchCard({ match }: { match: Match }) {
         <span className={`font-bold text-lg tabular-nums shrink-0 ${finished && !awayWon ? 'text-gray-500' : ''}`}>
           {match.status === 'scheduled' ? '-' : match.awayScore}
         </span>
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            toggleFavorite(match.awayTeam.id);
-          }}
-          className={`text-base leading-none shrink-0 ${awayFav ? 'text-yellow-400' : 'text-gray-600'}`}
-          aria-label={`Favorite ${match.awayTeam.name}`}
-        >
-          ★
-        </button>
       </div>
     </Link>
   );

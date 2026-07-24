@@ -43,8 +43,7 @@ export function useFavoriteAlerts(matches: Match[], favorites: string[], notify?
       const alerted: Record<string, string[]> = JSON.parse(localStorage.getItem(ALERTED_KEY) ?? '{}');
 
       for (const m of matches) {
-        const isFavMatch = favorites.includes(m.homeTeam.id) || favorites.includes(m.awayTeam.id);
-        if (!isFavMatch) continue;
+        if (!favorites.includes(m.id)) continue;
         const done = alerted[m.id] ?? [];
 
         const kickoff = new Date(`${m.date}T${m.time}:00`);
@@ -83,9 +82,7 @@ async function scheduleNativeNotifications(matches: Match[], favorites: string[]
   const perm = await LocalNotifications.checkPermissions();
   if (perm.display !== 'granted') return;
 
-  const favMatches = matches.filter(
-    (m) => favorites.includes(m.homeTeam.id) || favorites.includes(m.awayTeam.id)
-  );
+  const favMatches = matches.filter((m) => favorites.includes(m.id));
 
   const notifications = favMatches.flatMap((m) => {
     const kickoff = new Date(`${m.date}T${m.time}:00`);

@@ -32,9 +32,7 @@ export function useLiveEventAlerts(
     if (!isLiveApiConfigured || favorites.length === 0) return;
 
     async function poll() {
-      const liveFavMatch = matches.find(
-        (m) => m.status === 'live' && (favorites.includes(m.homeTeam.id) || favorites.includes(m.awayTeam.id))
-      );
+      const liveFavMatch = matches.find((m) => m.status === 'live' && favorites.includes(m.id));
       if (!liveFavMatch) {
         fixtureIdRef.current = null;
         return;

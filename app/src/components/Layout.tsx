@@ -34,6 +34,10 @@ export default function Layout() {
   }, []);
 
   useEffect(() => {
+    window.scrollTo(0, 0);
+  }, [location.pathname]);
+
+  useEffect(() => {
     if (!update) return;
     const body = `Versiunea ${update.version} este disponibilă. Apasă pentru a actualiza.`;
     addNotification('Actualizare CentralScore disponibilă', body);
