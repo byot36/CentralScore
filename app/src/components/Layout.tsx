@@ -3,6 +3,7 @@ import { Link, Outlet, useLocation } from 'react-router-dom';
 import { isLiveApiConfigured } from '../api/client';
 import { matches } from '../data/mock';
 import { useFavorites } from '../context/FavoritesContext';
+import { useNotifications } from '../context/NotificationsContext';
 import { useFavoriteAlerts } from '../hooks/useFavoriteAlerts';
 
 const NAV_LINKS = [
@@ -13,9 +14,10 @@ const NAV_LINKS = [
 
 export default function Layout() {
   const { favorites } = useFavorites();
+  const { unreadCount, addNotification } = useNotifications();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
-  useFavoriteAlerts(matches, favorites);
+  useFavoriteAlerts(matches, favorites, addNotification);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0f172a] text-white">
@@ -36,17 +38,29 @@ export default function Layout() {
               Central<span className="text-[#00c853]">Score</span>
             </Link>
           </div>
-          <nav className="hidden sm:flex items-center gap-4 text-sm text-gray-300">
-            {NAV_LINKS.map((l) => (
-              <Link
-                key={l.to}
-                to={l.to}
-                className={location.pathname === l.to ? 'text-white font-medium' : 'hover:text-white'}
-              >
-                {l.label}
-              </Link>
-            ))}
-          </nav>
+          <div className="flex items-center gap-4">
+            <nav className="hidden sm:flex items-center gap-4 text-sm text-gray-300">
+              {NAV_LINKS.map((l) => (
+                <Link
+                  key={l.to}
+                  to={l.to}
+                  className={location.pathname === l.to ? 'text-white font-medium' : 'hover:text-white'}
+                >
+                  {l.label}
+                </Link>
+              ))}
+            </nav>
+            <Link to="/notifications" className="relative p-1" aria-label="Notificări">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5m6 0v1a3 3 0 1 1-6 0v-1m6 0H9" />
+              </svg>
+              {unreadCount > 0 && (
+                <span className="absolute -top-1 -right-1 bg-[#00c853] text-black text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                  {unreadCount > 9 ? '9+' : unreadCount}
+                </span>
+              )}
+            </Link>
+          </div>
         </div>
         {menuOpen && (
           <nav className="sm:hidden border-t border-white/10 px-4 py-2 flex flex-col gap-1 text-sm">
