@@ -1,29 +1,70 @@
-import { Link, Outlet } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, Outlet, useLocation } from 'react-router-dom';
 import { isLiveApiConfigured } from '../api/client';
 import { matches } from '../data/mock';
 import { useFavorites } from '../context/FavoritesContext';
 import { useFavoriteAlerts } from '../hooks/useFavoriteAlerts';
 
+const NAV_LINKS = [
+  { to: '/', label: 'Meciuri' },
+  { to: '/favorites', label: 'Favorite' },
+  { to: '/settings', label: 'Setări' },
+];
+
 export default function Layout() {
   const { favorites } = useFavorites();
+  const location = useLocation();
+  const [menuOpen, setMenuOpen] = useState(false);
   useFavoriteAlerts(matches, favorites);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0f172a] text-white">
-      <header className="sticky top-0 z-10 border-b border-white/10 bg-[#0f172a]/95 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0f172a]/95 backdrop-blur">
         <div className="max-w-5xl mx-auto flex items-center justify-between px-4 py-3">
-          <Link to="/" className="flex items-center gap-2 font-extrabold text-lg tracking-tight">
-            <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#00c853]" />
-            Central<span className="text-[#00c853]">Score</span>
-          </Link>
-          <nav className="flex items-center gap-4 text-sm text-gray-300">
-            <Link to="/" className="hover:text-white">Meciuri</Link>
-            <Link to="/favorites" className="hover:text-white">Favorite</Link>
+          <div className="flex items-center gap-3">
+            <button
+              onClick={() => setMenuOpen((v) => !v)}
+              className="sm:hidden p-1 -ml-1"
+              aria-label="Meniu"
+            >
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path strokeLinecap="round" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <Link to="/" className="flex items-center gap-2 font-extrabold text-lg tracking-tight">
+              <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#00c853]" />
+              Central<span className="text-[#00c853]">Score</span>
+            </Link>
+          </div>
+          <nav className="hidden sm:flex items-center gap-4 text-sm text-gray-300">
+            {NAV_LINKS.map((l) => (
+              <Link
+                key={l.to}
+                to={l.to}
+                className={location.pathname === l.to ? 'text-white font-medium' : 'hover:text-white'}
+              >
+                {l.label}
+              </Link>
+            ))}
           </nav>
         </div>
+        {menuOpen && (
+          <nav className="sm:hidden border-t border-white/10 px-4 py-2 flex flex-col gap-1 text-sm">
+            {NAV_LINKS.map((l) => (
+              <Link
+                key={l.to}
+                to={l.to}
+                onClick={() => setMenuOpen(false)}
+                className={`py-2 ${location.pathname === l.to ? 'text-white font-medium' : 'text-gray-300'}`}
+              >
+                {l.label}
+              </Link>
+            ))}
+          </nav>
+        )}
         {!isLiveApiConfigured && (
           <div className="bg-amber-500/10 text-amber-300 text-xs text-center py-1 px-4">
-            Mod demo — date de exemplu. Conectează Worker-ul Sportmonks pentru date live.
+            Mod demo — date de exemplu. Conectează Worker-ul pentru date live.
           </div>
         )}
       </header>
@@ -31,7 +72,7 @@ export default function Layout() {
         <Outlet />
       </main>
       <footer className="border-t border-white/10 text-center text-xs text-gray-500 py-4">
-        CentralScore · date furnizate de Sportmonks
+        CentralScore · date furnizate de football-data.org
       </footer>
     </div>
   );
