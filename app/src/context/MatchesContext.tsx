@@ -12,9 +12,29 @@ const FOOTBALL_DATA_ID_TO_INTERNAL = Object.fromEntries(
   Object.entries(FOOTBALL_DATA_COMPETITION_IDS).map(([k, v]) => [String(v), k])
 );
 const REFRESH_MS = 90_000;
+const CACHE_KEY = 'centralscore-matches-cache';
 
 function remapCompetition(m: Match): Match {
   return { ...m, competitionId: FOOTBALL_DATA_ID_TO_INTERNAL[m.competitionId] ?? m.competitionId };
+}
+
+function loadCachedMatches(): Match[] | null {
+  try {
+    const raw = localStorage.getItem(CACHE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) && parsed.length > 0 ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+function saveCachedMatches(matches: Match[]) {
+  try {
+    localStorage.setItem(CACHE_KEY, JSON.stringify(matches));
+  } catch {
+    // spațiu insuficient sau localStorage indisponibil — nu e critic, doar pierdem cache-ul
+  }
 }
 
 interface MatchesContextValue {
@@ -26,11 +46,12 @@ interface MatchesContextValue {
 const MatchesContext = createContext<MatchesContextValue>({ matches: mockMatches, loading: false, error: null });
 
 export function MatchesProvider({ children }: { children: ReactNode }) {
-  // Datele demo (mock) sunt afișate doar dacă API-ul live nu e configurat —
-  // altfel rămâneau vizibile pe ecran (ex. "Real Madrid - Athletic Club")
-  // cât timp se încărcau datele reale, dând impresia greșită că sunt reale.
-  const [matches, setMatches] = useState<Match[]>(isLiveApiConfigured ? [] : mockMatches);
-  const [loading, setLoading] = useState(isLiveApiConfigured);
+  // La prima deschidere afișăm instant datele din cache (de la ultima
+  // sesiune), ca ligile să nu mai apară vizibil una câte una — se
+  // actualizează apoi silențios pe fundal cu datele proaspete.
+  const cached = isLiveApiConfigured ? loadCachedMatches() : null;
+  const [matches, setMatches] = useState<Match[]>(cached ?? (isLiveApiConfigured ? [] : mockMatches));
+  const [loading, setLoading] = useState(isLiveApiConfigured && !cached);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -38,19 +59,20 @@ export function MatchesProvider({ children }: { children: ReactNode }) {
 
     // Odată: tot sezonul pentru fiecare competiție, ca lista să nu fie
     // niciodată goală doar pentru că azi nu joacă nimeni (ex. pauze de vară).
-    // Fiecare competiție e afișată imediat ce sosește (nu abia la final),
-    // ca ecranul să nu rămână pe "Se încarcă..." zeci de secunde.
     let receivedAny = false;
+    let latestMatches: Match[] = cached ?? [];
     fetchAllSeasonMatches((competitionMatches) => {
       receivedAny = true;
       const remapped = competitionMatches.map(remapCompetition);
       setMatches((prev) => {
         const byId = new Map(prev.map((m) => [m.id, m]));
         for (const m of remapped) byId.set(m.id, m);
-        return Array.from(byId.values());
+        latestMatches = Array.from(byId.values());
+        return latestMatches;
       });
       setLoading(false);
     })
+      .then(() => saveCachedMatches(latestMatches))
       .catch((err) => {
         if (!receivedAny) setError(err.message);
       })
@@ -66,7 +88,9 @@ export function MatchesProvider({ children }: { children: ReactNode }) {
           setMatches((prev) => {
             const byId = new Map(prev.map((m) => [m.id, m]));
             for (const m of remapped) byId.set(m.id, m);
-            return Array.from(byId.values());
+            const next = Array.from(byId.values());
+            saveCachedMatches(next);
+            return next;
           });
         })
         .catch(() => {});
@@ -74,6 +98,7 @@ export function MatchesProvider({ children }: { children: ReactNode }) {
 
     const interval = setInterval(refreshToday, REFRESH_MS);
     return () => clearInterval(interval);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
