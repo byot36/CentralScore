@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { matches as mockMatches } from '../data/mock';
 import { isLiveApiConfigured } from '../api/client';
 import { fetchFixtureById } from '../api/sportmonks';
+import { fetchFootballDataMatchById } from '../api/footballdata';
 import type { Lineup, Match, Player, TeamStats } from '../types';
 
 const TABS = ['Rezumat', 'Aliniații', 'Statistici', 'Info'] as const;
@@ -17,7 +18,8 @@ export default function MatchDetail() {
 
   useEffect(() => {
     if (mockMatch || !isLiveApiConfigured || !id) return;
-    fetchFixtureById(id).then(setMatch).catch((err) => setError(err.message));
+    const fetcher = id.startsWith('fd-') ? fetchFootballDataMatchById(id) : fetchFixtureById(id);
+    fetcher.then(setMatch).catch((err) => setError(err.message));
   }, [id, mockMatch]);
 
   if (!match) {

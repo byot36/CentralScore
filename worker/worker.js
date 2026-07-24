@@ -1,14 +1,17 @@
-// CentralScore — proxy Cloudflare Worker pentru API-ul Sportmonks.
-// Ține cheia API secretă (setată ca "secret" în Cloudflare, nu în cod) și
-// expune un endpoint public sigur pe care îl apelează frontend-ul static.
+// CentralScore — proxy Cloudflare Worker pentru API-urile de fotbal.
+// Ține cheile API secrete (setate ca "secret" în Cloudflare, nu în cod) și
+// expune endpoint-uri publice sigure pe care le apelează frontend-ul static.
 //
-// Exemplu apel din frontend: GET https://<worker>.workers.dev/fixtures/date/2026-07-24
-// Worker-ul adaugă automat api_token=<SPORTMONKS_TOKEN> și redirecționează cererea.
+// Rutare:
+//   /sportmonks/<path>   -> https://api.sportmonks.com/v3/football/<path>
+//   /footballdata/<path> -> https://api.football-data.org/v4/<path>
 
 const SPORTMONKS_BASE = 'https://api.sportmonks.com/v3/football';
+const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4';
 
-// Doar domeniul tău GitHub Pages poate folosi acest proxy.
-const ALLOWED_ORIGIN = 'https://byot36.github.io';
+// Momentan permis din orice origine, cât timp testezi. Restrânge mai târziu
+// la domeniul real al site-ului tău.
+const ALLOWED_ORIGIN = '*';
 
 export default {
   async fetch(request, env) {
@@ -24,16 +27,25 @@ export default {
       return new Response(null, { headers: corsHeaders });
     }
 
-    // Orice se află după domeniul worker-ului se transmite direct la Sportmonks.
-    // ex: /fixtures/date/2026-07-24 -> https://api.sportmonks.com/v3/football/fixtures/date/2026-07-24
-    const targetUrl = new URL(SPORTMONKS_BASE + url.pathname);
-    url.searchParams.forEach((value, key) => targetUrl.searchParams.set(key, value));
-    targetUrl.searchParams.set('api_token', env.SPORTMONKS_TOKEN);
+    let targetUrl;
+    let upstreamHeaders = { Accept: 'application/json' };
 
-    const upstream = await fetch(targetUrl.toString(), {
-      headers: { Accept: 'application/json' },
-    });
+    if (url.pathname.startsWith('/footballdata/')) {
+      const subPath = url.pathname.replace('/footballdata', '');
+      targetUrl = new URL(FOOTBALL_DATA_BASE + subPath);
+      url.searchParams.forEach((value, key) => targetUrl.searchParams.set(key, value));
+      upstreamHeaders['X-Auth-Token'] = env.FOOTBALL_DATA_TOKEN;
+    } else {
+      // Compatibilitate: /sportmonks/<path> sau direct /<path> (comportament vechi).
+      const subPath = url.pathname.startsWith('/sportmonks/')
+        ? url.pathname.replace('/sportmonks', '')
+        : url.pathname;
+      targetUrl = new URL(SPORTMONKS_BASE + subPath);
+      url.searchParams.forEach((value, key) => targetUrl.searchParams.set(key, value));
+      targetUrl.searchParams.set('api_token', env.SPORTMONKS_TOKEN);
+    }
 
+    const upstream = await fetch(targetUrl.toString(), { headers: upstreamHeaders });
     const body = await upstream.text();
 
     return new Response(body, {

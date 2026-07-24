@@ -4,7 +4,19 @@ import { SPORTMONKS_LEAGUE_IDS } from '../data/league-ids';
 import MatchCard from '../components/MatchCard';
 import { isLiveApiConfigured } from '../api/client';
 import { fetchFixturesByDate } from '../api/sportmonks';
+import { fetchFootballDataMatchesByDate, FOOTBALL_DATA_COMPETITION_IDS } from '../api/footballdata';
 import type { Match } from '../types';
+
+// Inversăm mapările ca să putem rescrie competitionId-ul brut al fiecărei
+// surse (Sportmonks / football-data.org) în ID-ul intern folosit de UI.
+const SPORTMONKS_ID_TO_INTERNAL = Object.fromEntries(
+  Object.entries(SPORTMONKS_LEAGUE_IDS)
+    .filter(([, v]) => v != null)
+    .map(([k, v]) => [String(v), k])
+);
+const FOOTBALL_DATA_ID_TO_INTERNAL = Object.fromEntries(
+  Object.entries(FOOTBALL_DATA_COMPETITION_IDS).map(([k, v]) => [String(v), k])
+);
 
 export default function Home() {
   const featured = competitions.filter((c) => c.featured);
@@ -15,9 +27,24 @@ export default function Home() {
   useEffect(() => {
     if (!isLiveApiConfigured) return;
     const today = new Date().toISOString().slice(0, 10);
-    fetchFixturesByDate(today)
-      .then(setMatches)
-      .catch((err) => setError(err.message))
+
+    Promise.allSettled([fetchFixturesByDate(today), fetchFootballDataMatchesByDate(today)])
+      .then(([sportmonksResult, footballDataResult]) => {
+        const sportmonksMatches =
+          sportmonksResult.status === 'fulfilled'
+            ? sportmonksResult.value.map((m) => ({ ...m, competitionId: SPORTMONKS_ID_TO_INTERNAL[m.competitionId] ?? m.competitionId }))
+            : [];
+        const footballDataMatches =
+          footballDataResult.status === 'fulfilled'
+            ? footballDataResult.value.map((m) => ({ ...m, competitionId: FOOTBALL_DATA_ID_TO_INTERNAL[m.competitionId] ?? m.competitionId }))
+            : [];
+
+        setMatches([...sportmonksMatches, ...footballDataMatches]);
+
+        if (sportmonksResult.status === 'rejected' && footballDataResult.status === 'rejected') {
+          setError('Nu s-au putut încărca datele live din nicio sursă.');
+        }
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -39,15 +66,10 @@ export default function Home() {
       </div>
 
       {loading && <p className="text-sm text-gray-400">Se încarcă meciurile live...</p>}
-      {error && <p className="text-sm text-red-400">Eroare la încărcarea datelor live: {error}</p>}
+      {error && <p className="text-sm text-red-400">{error}</p>}
 
       {featured.map((comp) => {
-        const sportmonksId = SPORTMONKS_LEAGUE_IDS[comp.id];
-        const compMatches = matches.filter((m) =>
-          isLiveApiConfigured
-            ? sportmonksId != null && m.competitionId === String(sportmonksId)
-            : m.competitionId === comp.id
-        );
+        const compMatches = matches.filter((m) => m.competitionId === comp.id);
         if (compMatches.length === 0) return null;
         return (
           <section key={comp.id}>
