@@ -8,6 +8,10 @@ import { useFavoriteAlerts, requestNotificationPermission } from '../hooks/useFa
 import { useLiveEventAlerts } from '../hooks/useLiveEventAlerts';
 import { useAppUpdateCheck } from '../hooks/useAppUpdateCheck';
 import { Browser } from '@capacitor/browser';
+import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
+
+const isNative = Capacitor.isNativePlatform();
 
 const NAV_LINKS = [
   { to: '/', label: 'Meciuri' },
@@ -28,6 +32,22 @@ export default function Layout() {
   useEffect(() => {
     requestNotificationPermission();
   }, []);
+
+  useEffect(() => {
+    if (!update) return;
+    const body = `Versiunea ${update.version} este disponibilă. Apasă pentru a actualiza.`;
+    addNotification('Actualizare CentralScore disponibilă', body);
+    if (isNative) {
+      LocalNotifications.checkPermissions().then((p) => {
+        if (p.display === 'granted') {
+          LocalNotifications.schedule({
+            notifications: [{ id: 999999, title: 'CentralScore', body, schedule: { at: new Date(Date.now() + 500) } }],
+          });
+        }
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [update?.version]);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0f172a] text-white">
