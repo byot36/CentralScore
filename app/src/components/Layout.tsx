@@ -8,23 +8,25 @@ import { useFavoriteAlerts, requestNotificationPermission } from '../hooks/useFa
 import { useLiveEventAlerts } from '../hooks/useLiveEventAlerts';
 import { useAppUpdateCheck } from '../hooks/useAppUpdateCheck';
 import { usePushNotifications } from '../hooks/usePushNotifications';
+import { useLanguage } from '../context/LanguageContext';
 import { Browser } from '@capacitor/browser';
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 
 const isNative = Capacitor.isNativePlatform();
 
-const NAV_LINKS = [
-  { to: '/', label: 'Meciuri' },
-  { to: '/favorites', label: 'Favorite' },
-  { to: '/settings', label: 'Setări' },
-];
-
 export default function Layout() {
   const { favorites } = useFavorites();
   const { unreadCount, addNotification } = useNotifications();
   const { matches } = useMatches();
+  const { t } = useLanguage();
   const location = useLocation();
+
+  const NAV_LINKS = [
+    { to: '/', label: t('nav_matches') },
+    { to: '/favorites', label: t('nav_favorites') },
+    { to: '/settings', label: t('nav_settings') },
+  ];
   const [menuOpen, setMenuOpen] = useState(false);
   useFavoriteAlerts(matches, favorites, addNotification);
   useLiveEventAlerts(matches, favorites, addNotification);
@@ -41,8 +43,8 @@ export default function Layout() {
 
   useEffect(() => {
     if (!update) return;
-    const body = `Versiunea ${update.version} este disponibilă. Apasă pentru a actualiza.`;
-    addNotification('Actualizare CentralScore disponibilă', body, update.downloadUrl);
+    const body = t('update_notification_body', { version: update.version });
+    addNotification(t('update_notification_title'), body, update.downloadUrl);
     if (isNative) {
       LocalNotifications.checkPermissions().then((p) => {
         if (p.display === 'granted') {
@@ -103,7 +105,7 @@ export default function Layout() {
                 </Link>
               ))}
             </nav>
-            <Link to="/notifications" className="relative p-1" aria-label="Notificări">
+            <Link to="/notifications" className="relative p-1" aria-label={t('nav_notifications')}>
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5m6 0v1a3 3 0 1 1-6 0v-1m6 0H9" />
               </svg>
@@ -143,17 +145,17 @@ export default function Layout() {
         </nav>
         {!isLiveApiConfigured && (
           <div className="bg-amber-500/10 text-amber-300 text-xs text-center py-1 px-4">
-            Mod demo — date de exemplu. Conectează Worker-ul pentru date live.
+            {t('demo_mode_banner')}
           </div>
         )}
         {update && (
           <div className="bg-[#00c853]/10 text-[#00c853] text-xs text-center py-1.5 px-4 flex items-center justify-center gap-3">
-            <span>Versiune nouă disponibilă: v{update.version}</span>
+            <span>{t('update_available', { version: update.version })}</span>
             <button
               onClick={() => Browser.open({ url: update.downloadUrl })}
               className="bg-[#00c853] text-black font-medium px-2.5 py-0.5 rounded-full"
             >
-              Actualizează
+              {t('update_button')}
             </button>
           </div>
         )}
@@ -162,7 +164,7 @@ export default function Layout() {
         <Outlet />
       </main>
       <footer className="border-t border-white/10 text-center text-xs text-gray-500 py-4">
-        Copyright 2026 by Luisito{import.meta.env.VITE_APP_VERSION ? ` · v${import.meta.env.VITE_APP_VERSION}` : ''}
+        {t('footer_copyright')}{import.meta.env.VITE_APP_VERSION ? ` · v${import.meta.env.VITE_APP_VERSION}` : ''}
       </footer>
     </div>
   );

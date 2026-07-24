@@ -4,18 +4,20 @@ import { matches as mockMatches } from '../data/mock';
 import { isLiveApiConfigured } from '../api/client';
 import { fetchFootballDataMatchById } from '../api/footballdata';
 import { useMatches } from '../context/MatchesContext';
+import { useLanguage } from '../context/LanguageContext';
 import type { Lineup, Match, Player, TeamStats } from '../types';
 
-const TABS = ['Rezumat', 'Aliniații', 'Statistici', 'Info'] as const;
+const TABS = ['summary', 'lineups', 'stats', 'info'] as const;
 type Tab = (typeof TABS)[number];
 
 export default function MatchDetail() {
   const { id } = useParams();
+  const { t, locale } = useLanguage();
   const mockMatch = mockMatches.find((m) => m.id === id);
   const { matches } = useMatches();
   const knownMatch = matches.find((m) => m.id === id);
   const [match, setMatch] = useState<Match | undefined>(mockMatch ?? knownMatch);
-  const [tab, setTab] = useState<Tab>('Rezumat');
+  const [tab, setTab] = useState<Tab>('summary');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -25,7 +27,7 @@ export default function MatchDetail() {
     if (mockMatch || knownMatch || !isLiveApiConfigured || !id) return;
     fetchFootballDataMatchById(id)
       .then(setMatch)
-      .catch((err) => setError(err.message?.includes('429') ? 'Prea multe cereri către sursa de date momentan — încearcă din nou peste un minut.' : err.message));
+      .catch((err) => setError(err.message?.includes('429') ? t('match_rate_limited') : err.message));
   }, [id, mockMatch, knownMatch]);
 
   useEffect(() => {
@@ -35,22 +37,29 @@ export default function MatchDetail() {
   if (!match) {
     return (
       <div>
-        <p>{error ? `Eroare: ${error}` : 'Se încarcă...'}</p>
-        <Link to="/" className="text-[#00c853]">Înapoi</Link>
+        <p>{error ? `${t('match_error')}: ${error}` : t('match_loading')}</p>
+        <Link to="/" className="text-[#00c853]">{t('match_back')}</Link>
       </div>
     );
   }
 
+  const TAB_LABELS: Record<Tab, string> = {
+    summary: t('tab_summary'),
+    lineups: t('tab_lineups'),
+    stats: t('tab_stats'),
+    info: t('tab_info'),
+  };
+
   return (
     <div>
-      <Link to="/" className="text-sm text-gray-400 hover:text-white">← Toate meciurile</Link>
+      <Link to="/" className="text-sm text-gray-400 hover:text-white">{t('match_back')}</Link>
 
       <div className="mt-3 bg-[#111827] border border-white/10 rounded-lg p-5 text-center">
         <div className="text-xs text-gray-400 mb-2">
           {match.status === 'live' ? (
-            <span className="text-[#00c853] font-semibold">● Live · {match.minute}'</span>
-          ) : match.status === 'finished' ? 'Final' : (
-            new Date(`${match.date}T${match.time}:00`).toLocaleString('ro-RO', {
+            <span className="text-[#00c853] font-semibold">● {t('match_live')} · {match.minute}'</span>
+          ) : match.status === 'finished' ? t('match_final') : (
+            new Date(`${match.date}T${match.time}:00`).toLocaleString(locale, {
               day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
             })
           )}
@@ -78,32 +87,32 @@ export default function MatchDetail() {
         </div>
         {match.manOfTheMatch && (
           <div className="mt-3 text-xs text-yellow-400">
-            ⭐ Omul meciului: {match.manOfTheMatch}
+            ⭐ {t('match_man_of_match')}: {match.manOfTheMatch}
           </div>
         )}
       </div>
 
       <div className="flex gap-1 mt-4 border-b border-white/10 overflow-x-auto">
-        {TABS.map((t) => (
+        {TABS.map((tabKey) => (
           <button
-            key={t}
-            onClick={() => setTab(t)}
+            key={tabKey}
+            onClick={() => setTab(tabKey)}
             className={`px-3 py-2 text-sm shrink-0 border-b-2 -mb-px ${
-              tab === t ? 'border-[#00c853] text-white' : 'border-transparent text-gray-400'
+              tab === tabKey ? 'border-[#00c853] text-white' : 'border-transparent text-gray-400'
             }`}
           >
-            {t}
+            {TAB_LABELS[tabKey]}
           </button>
         ))}
       </div>
 
       <div className="mt-4">
-        {tab === 'Rezumat' && <Summary events={match.events} />}
-        {tab === 'Aliniații' && (
+        {tab === 'summary' && <Summary events={match.events} />}
+        {tab === 'lineups' && (
           <Lineups home={match.homeLineup} away={match.awayLineup} homeName={match.homeTeam.name} awayName={match.awayTeam.name} />
         )}
-        {tab === 'Statistici' && <Stats home={match.homeStats} away={match.awayStats} homeName={match.homeTeam.name} awayName={match.awayTeam.name} />}
-        {tab === 'Info' && (
+        {tab === 'stats' && <Stats home={match.homeStats} away={match.awayStats} homeName={match.homeTeam.name} awayName={match.awayTeam.name} />}
+        {tab === 'info' && (
           <InfoTab stadium={match.stadium} capacity={match.stadiumCapacity} referee={match.referee} tv={match.tvChannels} />
         )}
       </div>
@@ -123,7 +132,8 @@ function eventIcon(type: string) {
 }
 
 function Summary({ events }: { events: import('../types').MatchEvent[] }) {
-  if (events.length === 0) return <p className="text-gray-400 text-sm">Meciul nu a început încă.</p>;
+  const { t } = useLanguage();
+  if (events.length === 0) return <p className="text-gray-400 text-sm">{t('summary_not_started')}</p>;
   return (
     <ul className="space-y-3">
       {[...events].reverse().map((e, i) => (
@@ -138,13 +148,14 @@ function Summary({ events }: { events: import('../types').MatchEvent[] }) {
 }
 
 function Lineups({ home, away, homeName, awayName }: { home: Lineup; away: Lineup; homeName: string; awayName: string }) {
+  const { t } = useLanguage();
   if (home.starting.length === 0 && away.starting.length === 0) {
     const knownCoaches = home.coach.name !== 'Necunoscut' || away.coach.name !== 'Necunoscut';
     return (
       <p className="text-gray-400 text-sm">
         {knownCoaches
-          ? `Aliniațiile oficiale nu au fost anunțate încă. Antrenori: ${home.coach.name} vs ${away.coach.name}.`
-          : 'Aliniații, poziții pe teren și jucători individuali nu sunt disponibile pe planul gratuit al sursei de date folosite.'}
+          ? t('lineups_unofficial', { home: home.coach.name, away: away.coach.name })
+          : t('lineups_unavailable')}
       </p>
     );
   }
@@ -157,26 +168,27 @@ function Lineups({ home, away, homeName, awayName }: { home: Lineup; away: Lineu
 }
 
 function TeamLineup({ title, lineup }: { title: string; lineup: Lineup }) {
+  const { t } = useLanguage();
   return (
     <div>
       <h3 className="font-semibold mb-1">{title} · {lineup.formation}</h3>
       <p className="text-xs text-gray-400 mb-2">
-        Antrenor: {lineup.coach.name} (n. {lineup.coach.birthDate}) — {lineup.coach.formerClubs.join(', ')}
+        {t('lineups_coach')}: {lineup.coach.name} ({t('lineups_born')} {lineup.coach.birthDate}) — {lineup.coach.formerClubs.join(', ')}
         {lineup.coach.playedAsFootballer && lineup.coach.playerClubs && (
-          <> · Fost jucător la: {lineup.coach.playerClubs.join(', ')}</>
+          <> · {t('lineups_former_player')}: {lineup.coach.playerClubs.join(', ')}</>
         )}
       </p>
-      <p className="text-xs font-semibold text-gray-300 mt-3 mb-1">Titulari</p>
+      <p className="text-xs font-semibold text-gray-300 mt-3 mb-1">{t('lineups_starting')}</p>
       <ul className="space-y-1 text-sm">
         {lineup.starting.map((p) => <PlayerRow key={p.id} p={p} />)}
       </ul>
-      <p className="text-xs font-semibold text-gray-300 mt-3 mb-1">Rezerve</p>
+      <p className="text-xs font-semibold text-gray-300 mt-3 mb-1">{t('lineups_bench')}</p>
       <ul className="space-y-1 text-sm">
         {lineup.bench.map((p) => <PlayerRow key={p.id} p={p} />)}
       </ul>
       {lineup.unavailable.length > 0 && (
         <>
-          <p className="text-xs font-semibold text-gray-300 mt-3 mb-1">Indisponibili</p>
+          <p className="text-xs font-semibold text-gray-300 mt-3 mb-1">{t('lineups_unavailable_players')}</p>
           <ul className="space-y-1 text-sm">
             {lineup.unavailable.map((p) => (
               <li key={p.id} className="text-gray-400">{p.name} — {p.outReason}</li>
@@ -201,15 +213,16 @@ function PlayerRow({ p }: { p: Player }) {
 }
 
 function Stats({ home, away, homeName, awayName }: { home: TeamStats; away: TeamStats; homeName: string; awayName: string }) {
+  const { t } = useLanguage();
   const rows: [string, number, number][] = [
-    ['Posesie (%)', home.possession, away.possession],
-    ['Suturi', home.shots, away.shots],
-    ['Suturi pe poartă', home.shotsOnTarget, away.shotsOnTarget],
-    ['Pase', home.passes, away.passes],
-    ['Cornere', home.corners, away.corners],
-    ['Faulturi', home.fouls, away.fouls],
-    ['Cartonașe galbene', home.yellowCards, away.yellowCards],
-    ['Cartonașe roșii', home.redCards, away.redCards],
+    [t('stats_possession'), home.possession, away.possession],
+    [t('stats_shots'), home.shots, away.shots],
+    [t('stats_shots_target'), home.shotsOnTarget, away.shotsOnTarget],
+    [t('stats_passes'), home.passes, away.passes],
+    [t('stats_corners'), home.corners, away.corners],
+    [t('stats_fouls'), home.fouls, away.fouls],
+    [t('stats_yellow'), home.yellowCards, away.yellowCards],
+    [t('stats_red'), home.redCards, away.redCards],
   ];
   return (
     <div>
@@ -237,12 +250,13 @@ function Stats({ home, away, homeName, awayName }: { home: TeamStats; away: Team
 }
 
 function InfoTab({ stadium, capacity, referee, tv }: { stadium: string; capacity: number; referee: string; tv: string[] }) {
+  const { t, locale } = useLanguage();
   return (
     <div className="space-y-3 text-sm">
-      <div><span className="text-gray-400">Stadion:</span> {stadium}</div>
-      <div><span className="text-gray-400">Capacitate:</span> {capacity.toLocaleString('ro-RO')} locuri</div>
-      <div><span className="text-gray-400">Arbitru:</span> {referee}</div>
-      <div><span className="text-gray-400">Canale TV (România):</span> {tv.join(', ') || 'Necunoscut'}</div>
+      <div><span className="text-gray-400">{t('info_stadium')}:</span> {stadium}</div>
+      <div><span className="text-gray-400">{t('info_capacity')}:</span> {capacity.toLocaleString(locale)} {t('seats')}</div>
+      <div><span className="text-gray-400">{t('info_referee')}:</span> {referee}</div>
+      <div><span className="text-gray-400">{t('info_tv')}:</span> {tv.join(', ') || t('info_unknown')}</div>
     </div>
   );
 }

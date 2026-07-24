@@ -2,6 +2,7 @@ import { useEffect } from 'react';
 import { Browser } from '@capacitor/browser';
 import { Capacitor } from '@capacitor/core';
 import { useNotifications } from '../context/NotificationsContext';
+import { useLanguage } from '../context/LanguageContext';
 
 const isNative = Capacitor.isNativePlatform();
 
@@ -15,6 +16,7 @@ function openUrl(url: string) {
 
 export default function Notifications() {
   const { notifications, markAllRead, clearAll } = useNotifications();
+  const { t, locale } = useLanguage();
 
   useEffect(() => {
     markAllRead();
@@ -24,16 +26,16 @@ export default function Notifications() {
   return (
     <div>
       <div className="flex items-center justify-between mb-4">
-        <h1 className="text-xl font-bold">Notificări</h1>
+        <h1 className="text-xl font-bold">{t('notif_title')}</h1>
         {notifications.length > 0 && (
           <button onClick={clearAll} className="text-xs text-gray-400 hover:text-white">
-            Șterge tot
+            {t('notif_clear')}
           </button>
         )}
       </div>
 
       {notifications.length === 0 ? (
-        <p className="text-gray-400 text-sm">Nu ai notificări încă.</p>
+        <p className="text-gray-400 text-sm">{t('notif_empty')}</p>
       ) : (
         <ul className="space-y-2">
           {notifications.map((n) => (
@@ -48,9 +50,9 @@ export default function Notifications() {
                   <p className="text-sm font-medium">{n.title}</p>
                   <p className="text-sm text-gray-300">{n.body}</p>
                   <p className="text-xs text-gray-500 mt-1">
-                    {new Date(n.createdAt).toLocaleString('ro-RO')}
+                    {new Date(n.createdAt).toLocaleString(locale)}
                   </p>
-                  {n.url && <p className="text-xs text-[#00c853] mt-1">Apasă pentru a actualiza →</p>}
+                  {n.url && <p className="text-xs text-[#00c853] mt-1">{t('notif_update_hint')}</p>}
                 </div>
               </div>
             </li>

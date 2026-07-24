@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { competitions } from '../data/mock';
 import MatchCard from '../components/MatchCard';
 import { useMatches } from '../context/MatchesContext';
+import { useLanguage } from '../context/LanguageContext';
 import type { Match } from '../types';
 
 const MAX_PER_COMPETITION = 6;
@@ -30,7 +31,9 @@ function sortForDisplay(matches: Match[]): Match[] {
 export default function Home() {
   const featured = competitions.filter((c) => c.featured);
   const { matches, loading, error } = useMatches();
+  const { t } = useLanguage();
   const [selectedLeague, setSelectedLeague] = useState<string | null>(null);
+  const compName = (id: string) => t(`comp_${id}`);
 
   const groups = featured
     .map((comp) => ({ comp, compMatches: sortForDisplay(matches.filter((m) => m.competitionId === comp.id)) }))
@@ -49,7 +52,7 @@ export default function Home() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-xl font-bold mb-3">Ligile de top</h1>
+        <h1 className="text-xl font-bold mb-3">{t('home_title')}</h1>
         <div className="flex gap-2 overflow-x-auto pb-2">
           {groups.map(({ comp }) => (
             <button
@@ -62,20 +65,20 @@ export default function Home() {
               }`}
             >
               <span>{comp.logo}</span>
-              <span>{comp.name}</span>
+              <span>{compName(comp.id)}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {loading && <p className="text-sm text-gray-400">Se încarcă meciurile...</p>}
+      {loading && <p className="text-sm text-gray-400">{t('home_loading')}</p>}
       {error && <p className="text-sm text-red-400">{error}</p>}
 
       {visibleGroups.map(({ comp, compMatches }) => (
         <section key={comp.id}>
           {!selectedLeague && (
             <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
-              <span>{comp.logo}</span> {comp.name}
+              <span>{comp.logo}</span> {compName(comp.id)}
             </h2>
           )}
           <div className="grid gap-2 sm:grid-cols-2">
@@ -87,7 +90,7 @@ export default function Home() {
       ))}
 
       {!loading && !error && groups.length === 0 && (
-        <p className="text-sm text-gray-400">Nu sunt meciuri programate momentan în ligile acoperite.</p>
+        <p className="text-sm text-gray-400">{t('home_no_matches')}</p>
       )}
     </div>
   );

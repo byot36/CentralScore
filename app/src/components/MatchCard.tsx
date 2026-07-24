@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import type { Match } from '../types';
 import { useFavorites } from '../context/FavoritesContext';
+import { useLanguage } from '../context/LanguageContext';
 
 function TeamCrest({ logo, name }: { logo: string; name: string }) {
   const isImageUrl = logo.startsWith('http');
@@ -10,18 +11,19 @@ function TeamCrest({ logo, name }: { logo: string; name: string }) {
   return <span className="text-xl shrink-0">{logo}</span>;
 }
 
-function formatDateTime(match: Match) {
+function formatDateTime(match: Match, locale: string) {
   const kickoff = new Date(`${match.date}T${match.time}:00`);
   const today = new Date();
   const isToday = kickoff.toDateString() === today.toDateString();
-  const time = kickoff.toLocaleTimeString('ro-RO', { hour: '2-digit', minute: '2-digit' });
+  const time = kickoff.toLocaleTimeString(locale, { hour: '2-digit', minute: '2-digit' });
   if (isToday) return time;
-  const date = kickoff.toLocaleDateString('ro-RO', { day: 'numeric', month: 'short' });
+  const date = kickoff.toLocaleDateString(locale, { day: 'numeric', month: 'short' });
   return `${date}, ${time}`;
 }
 
 export default function MatchCard({ match }: { match: Match }) {
   const { isFavorite, toggleFavorite } = useFavorites();
+  const { t, locale } = useLanguage();
   const finished = match.status === 'finished';
   const homeWon = finished && match.homeScore > match.awayScore;
   const awayWon = finished && match.awayScore > match.homeScore;
@@ -49,11 +51,11 @@ export default function MatchCard({ match }: { match: Match }) {
       <div className="flex items-center justify-between text-xs mb-3 pr-5">
         <span>
           {match.status === 'live' ? (
-            <span className="text-[#00c853] font-semibold">● Live · {match.minute}'</span>
+            <span className="text-[#00c853] font-semibold">● {t('match_live')} · {match.minute}'</span>
           ) : finished ? (
-            <span className="bg-white/10 text-gray-400 px-2 py-0.5 rounded-full font-medium">Final</span>
+            <span className="bg-white/10 text-gray-400 px-2 py-0.5 rounded-full font-medium">{t('match_final')}</span>
           ) : (
-            <span className="text-gray-400">{formatDateTime(match)}</span>
+            <span className="text-gray-400">{formatDateTime(match, locale)}</span>
           )}
         </span>
       </div>

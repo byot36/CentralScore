@@ -3,6 +3,7 @@ import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import { findLiveFixtureByTeams, fetchFixtureEvents } from '../api/apifootball';
 import { isLiveApiConfigured } from '../api/client';
+import { translate } from '../context/LanguageContext';
 import type { Match } from '../types';
 
 const isNative = Capacitor.isNativePlatform();
@@ -27,9 +28,10 @@ function eventKey(fixtureId: number, e: { type: string; time: { elapsed: number 
 }
 
 function eventText(e: { type: string; detail: string; player: { name: string }; team: { name: string } }) {
-  if (e.type === 'Goal') return `⚽ GOL! ${e.player.name} (${e.team.name})`;
-  if (e.type === 'Card' && e.detail.toLowerCase().includes('red')) return `🟥 Cartonaș roșu: ${e.player.name} (${e.team.name})`;
-  if (e.type === 'Card') return `🟨 Cartonaș galben: ${e.player.name} (${e.team.name})`;
+  const vars = { player: e.player.name, team: e.team.name };
+  if (e.type === 'Goal') return translate('event_goal', vars);
+  if (e.type === 'Card' && e.detail.toLowerCase().includes('red')) return translate('event_red_card', vars);
+  if (e.type === 'Card') return translate('event_yellow_card', vars);
   return null;
 }
 

@@ -1,6 +1,7 @@
 import { useEffect } from 'react';
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
+import { translate } from '../context/LanguageContext';
 import type { Match } from '../types';
 
 // Pe Android (aplicația nativă), notificările de start și de final estimat
@@ -60,20 +61,22 @@ export function useFavoriteAlerts(matches: Match[], favorites: string[], notify?
         const minutesUntil = (kickoff.getTime() - Date.now()) / 60000;
 
         if (!done.includes('start') && minutesUntil <= 0 && minutesUntil > -10 && m.status !== 'scheduled') {
-          const body = `${m.homeTeam.name} - ${m.awayTeam.name} a început!`;
+          const body = translate('alert_match_started', { home: m.homeTeam.name, away: m.awayTeam.name });
           new Notification('CentralScore', { body });
           playSound('whistle_start.wav');
           notify?.('CentralScore', body);
           alerted[m.id] = [...done, 'start'];
         } else if (!done.includes('soon') && minutesUntil <= 15 && minutesUntil > 0) {
-          const body = `${m.homeTeam.name} - ${m.awayTeam.name} începe în curând!`;
+          const body = translate('alert_match_soon', { home: m.homeTeam.name, away: m.awayTeam.name });
           new Notification('CentralScore', { body });
           notify?.('CentralScore', body);
           alerted[m.id] = [...done, 'soon'];
         }
 
         if (!done.includes('finished') && m.status === 'finished') {
-          const body = `Final: ${m.homeTeam.name} ${m.homeScore} - ${m.awayScore} ${m.awayTeam.name}`;
+          const body = translate('alert_match_finished', {
+            home: m.homeTeam.name, away: m.awayTeam.name, homeScore: m.homeScore, awayScore: m.awayScore,
+          });
           new Notification('CentralScore', { body });
           playSound('whistle_end.wav');
           notify?.('CentralScore', body);
@@ -104,20 +107,20 @@ async function scheduleNativeNotifications(matches: Match[], favorites: string[]
       {
         id: idFromMatch(m.id, 'soon'),
         title: 'CentralScore',
-        body: `${m.homeTeam.name} - ${m.awayTeam.name} începe în curând!`,
+        body: translate('alert_match_soon', { home: m.homeTeam.name, away: m.awayTeam.name }),
         schedule: { at: reminder },
       },
       {
         id: idFromMatch(m.id, 'start'),
         title: 'CentralScore',
-        body: `${m.homeTeam.name} - ${m.awayTeam.name} a început!`,
+        body: translate('alert_match_started', { home: m.homeTeam.name, away: m.awayTeam.name }),
         schedule: { at: kickoff },
         sound: 'whistle_start.wav',
       },
       {
         id: idFromMatch(m.id, 'end-estimate'),
         title: 'CentralScore',
-        body: `${m.homeTeam.name} - ${m.awayTeam.name} ar trebui să se fi terminat — verifică scorul final.`,
+        body: translate('alert_match_ended_estimate', { home: m.homeTeam.name, away: m.awayTeam.name }),
         schedule: { at: estimatedEnd },
         sound: 'whistle_end.wav',
       },
