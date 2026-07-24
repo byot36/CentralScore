@@ -1,10 +1,34 @@
+import { useEffect, useState } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { isLiveApiConfigured } from '../api/client';
 import { requestNotificationPermission } from '../hooks/useFavoriteAlerts';
 import { competitions } from '../data/mock';
 
+const isNative = Capacitor.isNativePlatform();
+
 export default function Settings() {
-  const notifSupported = typeof window !== 'undefined' && 'Notification' in window;
-  const notifPermission = notifSupported ? Notification.permission : 'unsupported';
+  const [notifStatus, setNotifStatus] = useState<'granted' | 'denied' | 'default' | 'unsupported'>('default');
+
+  useEffect(() => {
+    if (isNative) {
+      LocalNotifications.checkPermissions().then((p) => setNotifStatus(p.display as typeof notifStatus));
+    } else if ('Notification' in window) {
+      setNotifStatus(Notification.permission);
+    } else {
+      setNotifStatus('unsupported');
+    }
+  }, []);
+
+  async function handleEnable() {
+    await requestNotificationPermission();
+    if (isNative) {
+      const p = await LocalNotifications.checkPermissions();
+      setNotifStatus(p.display as typeof notifStatus);
+    } else if ('Notification' in window) {
+      setNotifStatus(Notification.permission);
+    }
+  }
 
   return (
     <div className="space-y-8">
@@ -16,12 +40,15 @@ export default function Settings() {
           <div>
             <p className="text-sm">Notificări pentru echipele favorite</p>
             <p className="text-xs text-gray-500 mt-1">
-              Stare: {notifPermission === 'granted' ? 'Activate' : notifPermission === 'denied' ? 'Blocate din browser' : 'Neactivate'}
+              Stare: {notifStatus === 'granted' ? 'Activate' : notifStatus === 'denied' ? 'Blocate' : notifStatus === 'unsupported' ? 'Indisponibile' : 'Neactivate'}
             </p>
+            {isNative && (
+              <p className="text-xs text-gray-600 mt-1">Aplicație Android: funcționează și cu aplicația închisă.</p>
+            )}
           </div>
-          {notifSupported && notifPermission !== 'granted' && (
+          {notifStatus !== 'granted' && notifStatus !== 'unsupported' && (
             <button
-              onClick={requestNotificationPermission}
+              onClick={handleEnable}
               className="text-xs bg-[#00c853] text-black font-medium px-3 py-1.5 rounded-full shrink-0"
             >
               Activează
