@@ -7,6 +7,7 @@ import { useMatches } from '../context/MatchesContext';
 import { useFavoriteAlerts, requestNotificationPermission } from '../hooks/useFavoriteAlerts';
 import { useLiveEventAlerts } from '../hooks/useLiveEventAlerts';
 import { useAppUpdateCheck } from '../hooks/useAppUpdateCheck';
+import { usePushNotifications } from '../hooks/usePushNotifications';
 import { Browser } from '@capacitor/browser';
 import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
@@ -27,6 +28,7 @@ export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false);
   useFavoriteAlerts(matches, favorites, addNotification);
   useLiveEventAlerts(matches, favorites, addNotification);
+  usePushNotifications(matches, favorites);
   const update = useAppUpdateCheck();
 
   useEffect(() => {

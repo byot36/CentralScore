@@ -26,7 +26,10 @@ interface MatchesContextValue {
 const MatchesContext = createContext<MatchesContextValue>({ matches: mockMatches, loading: false, error: null });
 
 export function MatchesProvider({ children }: { children: ReactNode }) {
-  const [matches, setMatches] = useState<Match[]>(mockMatches);
+  // Datele demo (mock) sunt afișate doar dacă API-ul live nu e configurat —
+  // altfel rămâneau vizibile pe ecran (ex. "Real Madrid - Athletic Club")
+  // cât timp se încărcau datele reale, dând impresia greșită că sunt reale.
+  const [matches, setMatches] = useState<Match[]>(isLiveApiConfigured ? [] : mockMatches);
   const [loading, setLoading] = useState(isLiveApiConfigured);
   const [error, setError] = useState<string | null>(null);
 

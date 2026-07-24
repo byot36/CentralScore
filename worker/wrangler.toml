@@ -1,3 +1,24 @@
 name = "centralscore-proxy"
 main = "worker.js"
 compatibility_date = "2026-07-24"
+
+# Rulează checkFavoriteMatches() la fiecare minut, ca să detecteze start/final/
+# gol pentru meciurile favorizate și să trimită push notifications prin FCM.
+[triggers]
+crons = ["* * * * *"]
+
+# Namespace-uri KV — se creează manual din Cloudflare Dashboard (Workers &
+# Pages > KV) și se leagă de Worker din Settings > Bindings. ID-urile de mai
+# jos sunt placeholder — le înlocuiești cu cele reale după ce le creezi.
+[[kv_namespaces]]
+binding = "PUSH_TOKENS"
+id = "PLACEHOLDER_PUSH_TOKENS_ID"
+
+[[kv_namespaces]]
+binding = "MATCH_STATE"
+id = "PLACEHOLDER_MATCH_STATE_ID"
+
+# Secrete necesare (Settings > Variables and Secrets, tip "Secret"):
+#   FIREBASE_PROJECT_ID    = centralscore-f7695
+#   FIREBASE_CLIENT_EMAIL  = firebase-adminsdk-fbsvc@centralscore-f7695.iam.gserviceaccount.com
+#   FIREBASE_PRIVATE_KEY   = (câmpul "private_key" din fișierul Service Account, cu \n păstrate)

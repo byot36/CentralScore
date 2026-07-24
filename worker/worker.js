@@ -1,11 +1,16 @@
-// CentralScore — proxy Cloudflare Worker pentru API-urile de fotbal.
-// Ține cheile API secrete (setate ca "secret" în Cloudflare, nu în cod) și
-// expune endpoint-uri publice sigure pe care le apelează frontend-ul static.
+// CentralScore — proxy Cloudflare Worker pentru API-urile de fotbal + sistem
+// de push notifications (Firebase Cloud Messaging), care funcționează chiar
+// și cu aplicația Android complet închisă.
 //
-// Rutare:
+// Rutare API:
 //   /sportmonks/<path>   -> https://api.sportmonks.com/v3/football/<path>
 //   /footballdata/<path> -> https://api.football-data.org/v4/<path>
 //   /apifootball/<path>  -> https://v3.football.api-sports.io/<path>
+//
+// Push notifications:
+//   POST /push/register  -> înregistrează un token FCM + echipele favorite
+//   (Cron Trigger, la fiecare minut) -> verifică meciurile live ale
+//   echipelor favorite înregistrate și trimite notificări prin FCM.
 
 const SPORTMONKS_BASE = 'https://api.sportmonks.com/v3/football';
 const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4';
@@ -19,12 +24,16 @@ export default {
 
     const corsHeaders = {
       'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
-      'Access-Control-Allow-Methods': 'GET, OPTIONS',
+      'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
       'Access-Control-Allow-Headers': 'Content-Type',
     };
 
     if (request.method === 'OPTIONS') {
       return new Response(null, { headers: corsHeaders });
+    }
+
+    if (url.pathname === '/push/register' && request.method === 'POST') {
+      return handleRegisterPush(request, env, corsHeaders);
     }
 
     let targetUrl;
@@ -62,4 +71,177 @@ export default {
       },
     });
   },
+
+  // Rulează la fiecare minut (configurat ca Cron Trigger în Cloudflare).
+  async scheduled(event, env, ctx) {
+    ctx.waitUntil(checkFavoriteMatches(env));
+  },
 };
+
+async function handleRegisterPush(request, env, corsHeaders) {
+  try {
+    const { token, teams } = await request.json();
+    if (!token || !Array.isArray(teams)) {
+      return new Response(JSON.stringify({ error: 'token și teams sunt obligatorii' }), {
+        status: 400,
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+    await env.PUSH_TOKENS.put(token, JSON.stringify({ teams, updatedAt: Date.now() }), {
+      expirationTtl: 60 * 60 * 24 * 30, // token expiră singur dacă app nu mai reîmprospătează 30 zile
+    });
+    return new Response(JSON.stringify({ ok: true }), {
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  } catch (err) {
+    return new Response(JSON.stringify({ error: String(err) }), {
+      status: 500,
+      headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+    });
+  }
+}
+
+// ---- Verificare meciuri + trimitere notificări ----
+
+async function checkFavoriteMatches(env) {
+  const tokenList = await env.PUSH_TOKENS.list();
+  if (tokenList.keys.length === 0) return;
+
+  const tokenTeams = new Map(); // teamName(lowercase) -> Set<fcmToken>
+  for (const key of tokenList.keys) {
+    const raw = await env.PUSH_TOKENS.get(key.name);
+    if (!raw) continue;
+    const { teams } = JSON.parse(raw);
+    for (const t of teams) {
+      const norm = String(t).toLowerCase();
+      if (!tokenTeams.has(norm)) tokenTeams.set(norm, new Set());
+      tokenTeams.get(norm).add(key.name);
+    }
+  }
+  if (tokenTeams.size === 0) return;
+
+  const today = new Date().toISOString().slice(0, 10);
+  const res = await fetch(
+    `${FOOTBALL_DATA_BASE}/matches?dateFrom=${today}&dateTo=${today}`,
+    { headers: { 'X-Auth-Token': env.FOOTBALL_DATA_TOKEN, Accept: 'application/json' } }
+  );
+  if (!res.ok) return;
+  const data = await res.json();
+  const matches = data.matches ?? [];
+
+  const accessToken = await getFcmAccessToken(env);
+  if (!accessToken) return;
+
+  for (const m of matches) {
+    const homeNorm = m.homeTeam.name.toLowerCase();
+    const awayNorm = m.awayTeam.name.toLowerCase();
+    const interested = new Set([
+      ...(tokenTeams.get(homeNorm) ?? []),
+      ...(tokenTeams.get(awayNorm) ?? []),
+    ]);
+    if (interested.size === 0) continue;
+
+    const stateKey = `match-${m.id}`;
+    const prevRaw = await env.MATCH_STATE.get(stateKey);
+    const prev = prevRaw ? JSON.parse(prevRaw) : null;
+    const status = m.status;
+    const homeScore = m.score.fullTime.home ?? 0;
+    const awayScore = m.score.fullTime.away ?? 0;
+
+    const events = [];
+    if ((status === 'IN_PLAY' || status === 'PAUSED') && (!prev || prev.status === 'TIMED' || prev.status === 'SCHEDULED')) {
+      events.push({ title: 'CentralScore', body: `${m.homeTeam.name} - ${m.awayTeam.name} a început!`, sound: 'whistle_start' });
+    }
+    if (status === 'FINISHED' && prev && prev.status !== 'FINISHED') {
+      events.push({ title: 'CentralScore', body: `Final: ${m.homeTeam.name} ${homeScore} - ${awayScore} ${m.awayTeam.name}`, sound: 'whistle_end' });
+    }
+    if (prev && (homeScore !== prev.homeScore || awayScore !== prev.awayScore) && status !== 'FINISHED') {
+      const scorer = homeScore > prev.homeScore ? m.homeTeam.name : m.awayTeam.name;
+      events.push({ title: 'CentralScore', body: `⚽ GOL! ${scorer} — ${homeScore}-${awayScore}`, sound: 'goal_sound' });
+    }
+
+    for (const evt of events) {
+      for (const fcmToken of interested) {
+        await sendFcmPush(env, accessToken, fcmToken, evt);
+      }
+    }
+
+    await env.MATCH_STATE.put(stateKey, JSON.stringify({ status, homeScore, awayScore }), {
+      expirationTtl: 60 * 60 * 12,
+    });
+  }
+}
+
+async function sendFcmPush(env, accessToken, token, { title, body, sound }) {
+  try {
+    await fetch(`https://fcm.googleapis.com/v1/projects/${env.FIREBASE_PROJECT_ID}/messages:send`, {
+      method: 'POST',
+      headers: { Authorization: `Bearer ${accessToken}`, 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: {
+          token,
+          notification: { title, body },
+          android: { notification: { sound: `${sound}.wav`, channel_id: 'centralscore-live' } },
+        },
+      }),
+    });
+  } catch {
+    // token invalid/expirat — ignorăm, va fi reîmprospătat sau expiră singur din KV
+  }
+}
+
+// ---- OAuth2 pentru Firebase Admin (JWT semnat cu cheia de Service Account) ----
+
+let cachedAccessToken = null;
+let cachedAccessTokenExpiry = 0;
+
+async function getFcmAccessToken(env) {
+  if (cachedAccessToken && Date.now() < cachedAccessTokenExpiry - 60_000) return cachedAccessToken;
+
+  const now = Math.floor(Date.now() / 1000);
+  const header = { alg: 'RS256', typ: 'JWT' };
+  const claims = {
+    iss: env.FIREBASE_CLIENT_EMAIL,
+    scope: 'https://www.googleapis.com/auth/firebase.messaging',
+    aud: 'https://oauth2.googleapis.com/token',
+    iat: now,
+    exp: now + 3600,
+  };
+
+  const encoder = new TextEncoder();
+  const b64url = (buf) =>
+    btoa(String.fromCharCode(...new Uint8Array(buf)))
+      .replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+  const b64urlStr = (str) => b64url(encoder.encode(str));
+
+  const unsigned = `${b64urlStr(JSON.stringify(header))}.${b64urlStr(JSON.stringify(claims))}`;
+
+  const pemKey = env.FIREBASE_PRIVATE_KEY.replace(/\\n/g, '\n');
+  const pemBody = pemKey
+    .replace('-----BEGIN PRIVATE KEY-----', '')
+    .replace('-----END PRIVATE KEY-----', '')
+    .replace(/\s/g, '');
+  const keyData = Uint8Array.from(atob(pemBody), (c) => c.charCodeAt(0));
+
+  const cryptoKey = await crypto.subtle.importKey(
+    'pkcs8',
+    keyData,
+    { name: 'RSASSA-PKCS1-v1_5', hash: 'SHA-256' },
+    false,
+    ['sign']
+  );
+
+  const signature = await crypto.subtle.sign('RSASSA-PKCS1-v1_5', cryptoKey, encoder.encode(unsigned));
+  const jwt = `${unsigned}.${b64url(signature)}`;
+
+  const tokenRes = await fetch('https://oauth2.googleapis.com/token', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    body: `grant_type=urn:ietf:params:oauth:grant-type:jwt-bearer&assertion=${jwt}`,
+  });
+  if (!tokenRes.ok) return null;
+  const tokenData = await tokenRes.json();
+  cachedAccessToken = tokenData.access_token;
+  cachedAccessTokenExpiry = Date.now() + tokenData.expires_in * 1000;
+  return cachedAccessToken;
+}
