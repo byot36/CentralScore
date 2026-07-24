@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "947616268954",
+    "project_id": "centralscore-f7695",
+    "storage_bucket": "centralscore-f7695.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:947616268954:android:d639c4b59a768c1cde5523",
+        "android_client_info": {
+          "package_name": "com.centralscore.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBCXlJKnuVbZhDpbm_KI0WUDW5kp1-zZU8"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
