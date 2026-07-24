@@ -6,6 +6,13 @@ import type { Match } from '../types';
 
 const MAX_PER_COMPETITION = 6;
 
+// Competiții de tip cupă/turneu — apar în listă doar cu 3 zile înainte de
+// următorul meci (altfel ar putea rămâne "vizibile" luni întregi cu un
+// singur meci foarte îndepărtat în viitor). Ligile obișnuite rămân
+// neschimbate — arată orice meci programat, oricât de departe.
+const CUP_COMPETITIONS = new Set(['ucl', 'uel', 'uecl', 'nations', 'euro', 'wc']);
+const VISIBILITY_WINDOW_MS = 3 * 24 * 3600_000;
+
 function sortForDisplay(matches: Match[]): Match[] {
   const recentlyFinished = matches.filter(
     (m) => m.status !== 'finished' || Date.now() - new Date(`${m.date}T${m.time}:00`).getTime() < 3 * 24 * 3600_000
@@ -27,7 +34,15 @@ export default function Home() {
 
   const groups = featured
     .map((comp) => ({ comp, compMatches: sortForDisplay(matches.filter((m) => m.competitionId === comp.id)) }))
-    .filter((g) => g.compMatches.length > 0);
+    .filter((g) => {
+      if (g.compMatches.length === 0) return false;
+      if (!CUP_COMPETITIONS.has(g.comp.id)) return true;
+      return g.compMatches.some((m) => {
+        if (m.status !== 'scheduled') return true;
+        const kickoff = new Date(`${m.date}T${m.time}:00`).getTime();
+        return kickoff - Date.now() <= VISIBILITY_WINDOW_MS;
+      });
+    });
 
   const visibleGroups = selectedLeague ? groups.filter((g) => g.comp.id === selectedLeague) : groups;
 
