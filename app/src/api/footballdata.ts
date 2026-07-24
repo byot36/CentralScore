@@ -72,18 +72,29 @@ export async function fetchFootballDataMatchesByDate(date: string): Promise<Matc
   return data.matches.map(mapFDMatch);
 }
 
+function delay(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
 // Când nu sunt meciuri azi (pauză de sezon etc.), arătăm în schimb următoarele
 // meciuri programate din fiecare competiție, ca ecranul să nu rămână gol.
 // /v4/matches limitează intervalul dateFrom/dateTo la 10 zile, deci interogăm
 // fiecare competiție separat (fără filtru de dată = tot sezonul curent).
+// Cererile se fac una câte una, cu pauză între ele — planul gratuit
+// football-data.org permite doar ~10 cereri/minut (partajate între toți
+// utilizatorii aplicației, prin același Worker); cererile simultane pentru
+// toate cele 8 competiții loveau frecvent limita (eroare 429), iar ligile
+// care eșuau dispăreau din listă.
 export async function fetchAllSeasonMatches(): Promise<Match[]> {
-  const results = await Promise.allSettled(
-    Object.values(FOOTBALL_DATA_COMPETITION_IDS).map((id) =>
-      apiGet<{ matches: FDMatch[] }>(`/footballdata/competitions/${id}/matches`)
-    )
-  );
-  return results
-    .filter((r): r is PromiseFulfilledResult<{ matches: FDMatch[] }> => r.status === 'fulfilled')
-    .flatMap((r) => r.value.matches)
-    .map(mapFDMatch);
+  const all: Match[] = [];
+  for (const id of Object.values(FOOTBALL_DATA_COMPETITION_IDS)) {
+    try {
+      const data = await apiGet<{ matches: FDMatch[] }>(`/footballdata/competitions/${id}/matches`);
+      all.push(...data.matches.map(mapFDMatch));
+    } catch {
+      // o competiție eșuată nu trebuie să blocheze restul — continuăm
+    }
+    await delay(6500);
+  }
+  return all;
 }
