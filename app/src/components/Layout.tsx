@@ -107,7 +107,7 @@ export default function Layout() {
         <Outlet />
       </main>
       <footer className="border-t border-white/10 text-center text-xs text-gray-500 py-4">
-        CentralScore · date furnizate de football-data.org
+        Copyright 2026 by Luisito
       </footer>
     </div>
   );
