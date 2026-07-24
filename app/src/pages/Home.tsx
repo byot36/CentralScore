@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { competitions } from '../data/mock';
 import MatchCard from '../components/MatchCard';
 import { useMatches } from '../context/MatchesContext';
@@ -10,7 +11,6 @@ function sortForDisplay(matches: Match[]): Match[] {
     (m) => m.status !== 'finished' || Date.now() - new Date(`${m.date}T${m.time}:00`).getTime() < 3 * 24 * 3600_000
   );
   return recentlyFinished.sort((a, b) => {
-    // Live primele, apoi cele viitoare (crescător), apoi cele terminate recent (descrescător).
     const rank = (m: Match) => (m.status === 'live' ? 0 : m.status === 'scheduled' ? 1 : 2);
     const rankDiff = rank(a) - rank(b);
     if (rankDiff !== 0) return rankDiff;
@@ -20,61 +20,66 @@ function sortForDisplay(matches: Match[]): Match[] {
   });
 }
 
-function scrollToLeague(id: string) {
-  document.getElementById(`league-${id}`)?.scrollIntoView({ behavior: 'smooth', block: 'start' });
-}
-
 export default function Home() {
   const featured = competitions.filter((c) => c.featured);
   const { matches, loading, error } = useMatches();
+  const [selectedLeague, setSelectedLeague] = useState<string | null>(null);
 
   const groups = featured
-    .map((comp) => ({ comp, compMatches: sortForDisplay(matches.filter((m) => m.competitionId === comp.id)).slice(0, MAX_PER_COMPETITION) }))
+    .map((comp) => ({ comp, compMatches: sortForDisplay(matches.filter((m) => m.competitionId === comp.id)) }))
     .filter((g) => g.compMatches.length > 0);
+
+  const visibleGroups = selectedLeague ? groups.filter((g) => g.comp.id === selectedLeague) : groups;
 
   return (
     <div className="space-y-8">
       <div>
         <h1 className="text-xl font-bold mb-3">Ligile de top</h1>
         <div className="flex gap-2 overflow-x-auto pb-2">
-          {featured.map((c) => {
-            const hasMatches = groups.some((g) => g.comp.id === c.id);
-            return (
-              <button
-                key={c.id}
-                onClick={() => hasMatches && scrollToLeague(c.id)}
-                disabled={!hasMatches}
-                className={`shrink-0 flex items-center gap-2 border rounded-full px-3 py-1.5 text-sm transition-colors ${
-                  hasMatches
-                    ? 'bg-[#111827] border-white/10 hover:border-[#00c853]/50 cursor-pointer'
-                    : 'bg-[#111827]/40 border-white/5 text-gray-500 cursor-default'
-                }`}
-              >
-                <span>{c.logo}</span>
-                <span>{c.name}</span>
-              </button>
-            );
-          })}
+          {selectedLeague && (
+            <button
+              onClick={() => setSelectedLeague(null)}
+              className="shrink-0 flex items-center gap-2 bg-[#00c853] text-black font-medium rounded-full px-3 py-1.5 text-sm"
+            >
+              ← Toate ligile
+            </button>
+          )}
+          {groups.map(({ comp }) => (
+            <button
+              key={comp.id}
+              onClick={() => setSelectedLeague(comp.id === selectedLeague ? null : comp.id)}
+              className={`shrink-0 flex items-center gap-2 border rounded-full px-3 py-1.5 text-sm transition-colors ${
+                comp.id === selectedLeague
+                  ? 'bg-[#00c853]/10 border-[#00c853] text-white'
+                  : 'bg-[#111827] border-white/10 hover:border-[#00c853]/50'
+              }`}
+            >
+              <span>{comp.logo}</span>
+              <span>{comp.name}</span>
+            </button>
+          ))}
         </div>
       </div>
 
       {loading && <p className="text-sm text-gray-400">Se încarcă meciurile...</p>}
       {error && <p className="text-sm text-red-400">{error}</p>}
 
-      {groups.map(({ comp, compMatches }) => (
-        <section key={comp.id} id={`league-${comp.id}`} className="scroll-mt-20">
-          <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
-            <span>{comp.logo}</span> {comp.name}
-          </h2>
+      {visibleGroups.map(({ comp, compMatches }) => (
+        <section key={comp.id}>
+          {!selectedLeague && (
+            <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
+              <span>{comp.logo}</span> {comp.name}
+            </h2>
+          )}
           <div className="grid gap-2 sm:grid-cols-2">
-            {compMatches.map((m) => (
+            {(selectedLeague ? compMatches : compMatches.slice(0, MAX_PER_COMPETITION)).map((m) => (
               <MatchCard key={m.id} match={m} />
             ))}
           </div>
         </section>
       ))}
 
-      {!loading && !error && matches.length === 0 && (
+      {!loading && !error && groups.length === 0 && (
         <p className="text-sm text-gray-400">Nu sunt meciuri programate momentan în ligile acoperite.</p>
       )}
     </div>

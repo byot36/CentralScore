@@ -59,8 +59,9 @@ function mapFDMatch(m: FDMatch): Match {
 
 export async function fetchFootballDataMatchById(id: string): Promise<Match> {
   const numericId = id.replace(/^fd-/, '');
-  const data = await apiGet<{ match: FDMatch }>(`/footballdata/matches/${numericId}`);
-  return mapFDMatch(data.match);
+  // GET /v4/matches/{id} întoarce meciul direct la nivelul rădăcină, nu împachetat.
+  const data = await apiGet<FDMatch>(`/footballdata/matches/${numericId}`);
+  return mapFDMatch(data);
 }
 
 export async function fetchFootballDataMatchesByDate(date: string): Promise<Match[]> {
