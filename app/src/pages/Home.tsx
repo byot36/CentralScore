@@ -1,19 +1,10 @@
 import { useEffect, useState } from 'react';
 import { competitions, matches as mockMatches } from '../data/mock';
-import { SPORTMONKS_LEAGUE_IDS } from '../data/league-ids';
 import MatchCard from '../components/MatchCard';
 import { isLiveApiConfigured } from '../api/client';
-import { fetchFixturesByDate } from '../api/sportmonks';
 import { fetchFootballDataMatchesByDate, FOOTBALL_DATA_COMPETITION_IDS } from '../api/footballdata';
 import type { Match } from '../types';
 
-// Inversăm mapările ca să putem rescrie competitionId-ul brut al fiecărei
-// surse (Sportmonks / football-data.org) în ID-ul intern folosit de UI.
-const SPORTMONKS_ID_TO_INTERNAL = Object.fromEntries(
-  Object.entries(SPORTMONKS_LEAGUE_IDS)
-    .filter(([, v]) => v != null)
-    .map(([k, v]) => [String(v), k])
-);
 const FOOTBALL_DATA_ID_TO_INTERNAL = Object.fromEntries(
   Object.entries(FOOTBALL_DATA_COMPETITION_IDS).map(([k, v]) => [String(v), k])
 );
@@ -28,23 +19,16 @@ export default function Home() {
     if (!isLiveApiConfigured) return;
     const today = new Date().toISOString().slice(0, 10);
 
-    Promise.allSettled([fetchFixturesByDate(today), fetchFootballDataMatchesByDate(today)])
-      .then(([sportmonksResult, footballDataResult]) => {
-        const sportmonksMatches =
-          sportmonksResult.status === 'fulfilled'
-            ? sportmonksResult.value.map((m) => ({ ...m, competitionId: SPORTMONKS_ID_TO_INTERNAL[m.competitionId] ?? m.competitionId }))
-            : [];
-        const footballDataMatches =
-          footballDataResult.status === 'fulfilled'
-            ? footballDataResult.value.map((m) => ({ ...m, competitionId: FOOTBALL_DATA_ID_TO_INTERNAL[m.competitionId] ?? m.competitionId }))
-            : [];
-
-        setMatches([...sportmonksMatches, ...footballDataMatches]);
-
-        if (sportmonksResult.status === 'rejected' && footballDataResult.status === 'rejected') {
-          setError('Nu s-au putut încărca datele live din nicio sursă.');
-        }
+    fetchFootballDataMatchesByDate(today)
+      .then((footballDataMatches) => {
+        setMatches(
+          footballDataMatches.map((m) => ({
+            ...m,
+            competitionId: FOOTBALL_DATA_ID_TO_INTERNAL[m.competitionId] ?? m.competitionId,
+          }))
+        );
       })
+      .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
   }, []);
 

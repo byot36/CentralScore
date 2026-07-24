@@ -14,8 +14,6 @@ export const competitions: Competition[] = [
   { id: 'ligue1', name: 'Ligue 1', country: 'Franța', logo: '🇫🇷', featured: true },
   { id: 'liga1ro', name: 'Superliga României', country: 'România', logo: '🇷🇴', featured: true },
   { id: 'liga2ro', name: 'Liga a 2-a a României', country: 'România', logo: '🇷🇴', featured: true },
-  { id: 'superliga-dk', name: 'Superliga (Danemarca)', country: 'Danemarca', logo: '🇩🇰', featured: true, sportmonksId: 271 },
-  { id: 'premiership-sco', name: 'Premiership (Scoția)', country: 'Scoția', logo: '🏴󠁧󠁢󠁳󠁣󠁴󠁿', featured: true, sportmonksId: 501 },
 ];
 
 function player(
