@@ -1,7 +1,19 @@
 import { useEffect, useRef } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { LocalNotifications } from '@capacitor/local-notifications';
 import { findLiveFixtureByTeams, fetchFixtureEvents } from '../api/apifootball';
 import { isLiveApiConfigured } from '../api/client';
 import type { Match } from '../types';
+
+const isNative = Capacitor.isNativePlatform();
+
+function playGoalSound() {
+  try {
+    new Audio('/sounds/goal_sound.wav').play().catch(() => {});
+  } catch {
+    // autoplay blocat de browser — ignorăm
+  }
+}
 
 // Verifică periodic (doar cât timp aplicația e deschisă) dacă vreo echipă
 // favorită are un meci LIVE, și dacă da, urmărește evenimentele (gol,
@@ -51,7 +63,24 @@ export function useLiveEventAlerts(
           const key = eventKey(fixtureIdRef.current, e);
           if (seen.includes(key)) continue;
           const text = eventText(e);
-          if (text) notify('CentralScore', text);
+          if (text) {
+            notify('CentralScore', text);
+            if (e.type === 'Goal') {
+              if (isNative) {
+                LocalNotifications.schedule({
+                  notifications: [{
+                    id: Math.floor(Math.random() * 2147483647),
+                    title: 'CentralScore',
+                    body: text,
+                    schedule: { at: new Date(Date.now() + 300) },
+                    sound: 'goal_sound.wav',
+                  }],
+                });
+              } else {
+                playGoalSound();
+              }
+            }
+          }
           seen.push(key);
         }
         localStorage.setItem(SEEN_EVENTS_KEY, JSON.stringify(seen.slice(-200)));

@@ -3,16 +3,26 @@ import { Capacitor } from '@capacitor/core';
 import { LocalNotifications } from '@capacitor/local-notifications';
 import type { Match } from '../types';
 
-// Pe Android (aplicația nativă), notificarea de start de meci e programată de
-// sistemul de operare — funcționează chiar și cu aplicația complet închisă.
-// Notificarea de "s-a terminat" se detectează prin verificarea periodică a
-// statusului meciului, deci necesită aplicația deschisă/recent activă — nu
-// există date de evenimente live (gol/cartonaș) pe planul gratuit folosit,
-// deci acelea nu pot fi notificate.
+// Pe Android (aplicația nativă), notificările de start și de final estimat
+// sunt programate în avans de sistemul de operare — funcționează chiar și cu
+// ecranul închis (dar aplicația trebuie să fi rulat măcar o dată recent, ca
+// să fi apucat să le programeze). Ora exactă de final nu se cunoaște dinainte
+// (prelungiri variabile), deci "fluierul final" nativ e o estimare la
+// kickoff + 115 minute — dacă aplicația e deschisă, statusul real e verificat
+// și notificarea de final corectă apare oricum prin polling.
 const ALERTED_KEY = 'centralscore-alerted-matches';
 const isNative = Capacitor.isNativePlatform();
+const ESTIMATED_MATCH_MINUTES = 115;
 
 type NotifyFn = (title: string, body: string) => void;
+
+function playSound(file: string) {
+  try {
+    new Audio(`/sounds/${file}`).play().catch(() => {});
+  } catch {
+    // autoplay blocat de browser — ignorăm
+  }
+}
 
 function idFromMatch(matchId: string, suffix: string) {
   let hash = 0;
@@ -52,6 +62,7 @@ export function useFavoriteAlerts(matches: Match[], favorites: string[], notify?
         if (!done.includes('start') && minutesUntil <= 0 && minutesUntil > -10 && m.status !== 'scheduled') {
           const body = `${m.homeTeam.name} - ${m.awayTeam.name} a început!`;
           new Notification('CentralScore', { body });
+          playSound('whistle_start.wav');
           notify?.('CentralScore', body);
           alerted[m.id] = [...done, 'start'];
         } else if (!done.includes('soon') && minutesUntil <= 15 && minutesUntil > 0) {
@@ -64,6 +75,7 @@ export function useFavoriteAlerts(matches: Match[], favorites: string[], notify?
         if (!done.includes('finished') && m.status === 'finished') {
           const body = `Final: ${m.homeTeam.name} ${m.homeScore} - ${m.awayScore} ${m.awayTeam.name}`;
           new Notification('CentralScore', { body });
+          playSound('whistle_end.wav');
           notify?.('CentralScore', body);
           alerted[m.id] = [...(alerted[m.id] ?? done), 'finished'];
         }
@@ -87,6 +99,7 @@ async function scheduleNativeNotifications(matches: Match[], favorites: string[]
   const notifications = favMatches.flatMap((m) => {
     const kickoff = new Date(`${m.date}T${m.time}:00`);
     const reminder = new Date(kickoff.getTime() - 15 * 60_000);
+    const estimatedEnd = new Date(kickoff.getTime() + ESTIMATED_MATCH_MINUTES * 60_000);
     return [
       {
         id: idFromMatch(m.id, 'soon'),
@@ -99,6 +112,14 @@ async function scheduleNativeNotifications(matches: Match[], favorites: string[]
         title: 'CentralScore',
         body: `${m.homeTeam.name} - ${m.awayTeam.name} a început!`,
         schedule: { at: kickoff },
+        sound: 'whistle_start.wav',
+      },
+      {
+        id: idFromMatch(m.id, 'end-estimate'),
+        title: 'CentralScore',
+        body: `${m.homeTeam.name} - ${m.awayTeam.name} ar trebui să se fi terminat — verifică scorul final.`,
+        schedule: { at: estimatedEnd },
+        sound: 'whistle_end.wav',
       },
     ];
   }).filter((n) => n.schedule.at.getTime() > Date.now());
