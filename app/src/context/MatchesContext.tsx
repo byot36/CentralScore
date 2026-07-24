@@ -38,13 +38,22 @@ export function MatchesProvider({ children }: { children: ReactNode }) {
 
     // Odată: tot sezonul pentru fiecare competiție, ca lista să nu fie
     // niciodată goală doar pentru că azi nu joacă nimeni (ex. pauze de vară).
-    fetchAllSeasonMatches()
-      .then((season) => {
-        // Nu golim lista dacă răspunsul e gol (ex. limită API atinsă temporar
-        // sau tranziție între sezoane) — păstrăm ce aveam deja pe ecran.
-        if (season.length > 0) setMatches(season.map(remapCompetition));
+    // Fiecare competiție e afișată imediat ce sosește (nu abia la final),
+    // ca ecranul să nu rămână pe "Se încarcă..." zeci de secunde.
+    let receivedAny = false;
+    fetchAllSeasonMatches((competitionMatches) => {
+      receivedAny = true;
+      const remapped = competitionMatches.map(remapCompetition);
+      setMatches((prev) => {
+        const byId = new Map(prev.map((m) => [m.id, m]));
+        for (const m of remapped) byId.set(m.id, m);
+        return Array.from(byId.values());
+      });
+      setLoading(false);
+    })
+      .catch((err) => {
+        if (!receivedAny) setError(err.message);
       })
-      .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
 
     // Periodic: doar meciurile de azi, ca să actualizăm scor/status live

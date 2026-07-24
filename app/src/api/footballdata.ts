@@ -85,16 +85,20 @@ function delay(ms: number) {
 // utilizatorii aplicației, prin același Worker); cererile simultane pentru
 // toate cele 8 competiții loveau frecvent limita (eroare 429), iar ligile
 // care eșuau dispăreau din listă.
-export async function fetchAllSeasonMatches(): Promise<Match[]> {
+export async function fetchAllSeasonMatches(onCompetition?: (matches: Match[]) => void): Promise<Match[]> {
   const all: Match[] = [];
   for (const id of Object.values(FOOTBALL_DATA_COMPETITION_IDS)) {
     try {
       const data = await apiGet<{ matches: FDMatch[] }>(`/footballdata/competitions/${id}/matches`);
-      all.push(...data.matches.map(mapFDMatch));
+      const mapped = data.matches.map(mapFDMatch);
+      all.push(...mapped);
+      // Afișăm liga imediat ce a sosit, în loc să așteptăm tot sezonul —
+      // altfel ecranul rămânea pe "Se încarcă..." până la ~50s.
+      onCompetition?.(mapped);
     } catch {
       // o competiție eșuată nu trebuie să blocheze restul — continuăm
     }
-    await delay(6500);
+    await delay(3000);
   }
   return all;
 }
