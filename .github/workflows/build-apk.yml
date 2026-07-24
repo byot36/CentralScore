@@ -2,11 +2,14 @@ name: Build CentralScore Android APK
 
 on:
   push:
-    branches: [master]
+    branches: [main]
     paths:
       - 'app/**'
       - '.github/workflows/build-apk.yml'
   workflow_dispatch:
+
+permissions:
+  contents: write
 
 jobs:
   build-apk:
@@ -41,8 +44,19 @@ jobs:
         working-directory: app/android
         run: ./gradlew assembleDebug
 
-      - name: Upload APK
+      - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
           name: centralscore-debug-apk
           path: app/android/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Rename APK for release
+        run: cp app/android/app/build/outputs/apk/debug/app-debug.apk CentralScore.apk
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.0.${{ github.run_number }}
+          name: CentralScore v1.0.${{ github.run_number }}
+          files: CentralScore.apk
+          generate_release_notes: true
