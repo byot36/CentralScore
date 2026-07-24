@@ -51,14 +51,6 @@ export default function Home() {
       <div>
         <h1 className="text-xl font-bold mb-3">Ligile de top</h1>
         <div className="flex gap-2 overflow-x-auto pb-2">
-          {selectedLeague && (
-            <button
-              onClick={() => setSelectedLeague(null)}
-              className="shrink-0 flex items-center gap-2 bg-[#00c853] text-black font-medium rounded-full px-3 py-1.5 text-sm"
-            >
-              ← Toate ligile
-            </button>
-          )}
           {groups.map(({ comp }) => (
             <button
               key={comp.id}

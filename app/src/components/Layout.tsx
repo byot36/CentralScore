@@ -90,6 +90,7 @@ export default function Layout() {
                 <Link
                   key={l.to}
                   to={l.to}
+                  onClick={() => window.scrollTo(0, 0)}
                   className={`relative py-1 transition-colors duration-200 after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:bg-[#00c853] after:transition-all after:duration-300 ${
                     location.pathname === l.to
                       ? 'text-white font-medium after:w-full'
@@ -123,7 +124,10 @@ export default function Layout() {
                 <Link
                   key={l.to}
                   to={l.to}
-                  onClick={() => setMenuOpen(false)}
+                  onClick={() => {
+                    setMenuOpen(false);
+                    window.scrollTo(0, 0);
+                  }}
                   style={{ transitionDelay: menuOpen ? `${i * 40}ms` : '0ms' }}
                   className={`py-2 transition-all duration-200 ${
                     menuOpen ? 'translate-x-0 opacity-100' : '-translate-x-2 opacity-0'
