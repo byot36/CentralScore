@@ -160,7 +160,7 @@ export default function Layout() {
         <Outlet />
       </main>
       <footer className="border-t border-white/10 text-center text-xs text-gray-500 py-4">
-        Copyright 2026 by Luisito
+        Copyright 2026 by Luisito{import.meta.env.VITE_APP_VERSION ? ` · v${import.meta.env.VITE_APP_VERSION}` : ''}
       </footer>
     </div>
   );
