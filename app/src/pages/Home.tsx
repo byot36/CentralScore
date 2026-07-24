@@ -1,36 +1,10 @@
-import { useEffect, useState } from 'react';
-import { competitions, matches as mockMatches } from '../data/mock';
+import { competitions } from '../data/mock';
 import MatchCard from '../components/MatchCard';
-import { isLiveApiConfigured } from '../api/client';
-import { fetchFootballDataMatchesByDate, FOOTBALL_DATA_COMPETITION_IDS } from '../api/footballdata';
-import type { Match } from '../types';
-
-const FOOTBALL_DATA_ID_TO_INTERNAL = Object.fromEntries(
-  Object.entries(FOOTBALL_DATA_COMPETITION_IDS).map(([k, v]) => [String(v), k])
-);
+import { useMatches } from '../context/MatchesContext';
 
 export default function Home() {
   const featured = competitions.filter((c) => c.featured);
-  const [matches, setMatches] = useState<Match[]>(mockMatches);
-  const [loading, setLoading] = useState(isLiveApiConfigured);
-  const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!isLiveApiConfigured) return;
-    const today = new Date().toISOString().slice(0, 10);
-
-    fetchFootballDataMatchesByDate(today)
-      .then((footballDataMatches) => {
-        setMatches(
-          footballDataMatches.map((m) => ({
-            ...m,
-            competitionId: FOOTBALL_DATA_ID_TO_INTERNAL[m.competitionId] ?? m.competitionId,
-          }))
-        );
-      })
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
-  }, []);
+  const { matches, loading, error } = useMatches();
 
   return (
     <div className="space-y-8">

@@ -1,10 +1,11 @@
 import { useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { isLiveApiConfigured } from '../api/client';
-import { matches } from '../data/mock';
 import { useFavorites } from '../context/FavoritesContext';
 import { useNotifications } from '../context/NotificationsContext';
+import { useMatches } from '../context/MatchesContext';
 import { useFavoriteAlerts } from '../hooks/useFavoriteAlerts';
+import { useLiveEventAlerts } from '../hooks/useLiveEventAlerts';
 
 const NAV_LINKS = [
   { to: '/', label: 'Meciuri' },
@@ -15,9 +16,11 @@ const NAV_LINKS = [
 export default function Layout() {
   const { favorites } = useFavorites();
   const { unreadCount, addNotification } = useNotifications();
+  const { matches } = useMatches();
   const location = useLocation();
   const [menuOpen, setMenuOpen] = useState(false);
   useFavoriteAlerts(matches, favorites, addNotification);
+  useLiveEventAlerts(matches, favorites, addNotification);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0f172a] text-white">

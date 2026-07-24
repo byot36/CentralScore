@@ -1,0 +1,69 @@
+import { useEffect, useRef } from 'react';
+import { findLiveFixtureByTeams, fetchFixtureEvents } from '../api/apifootball';
+import { isLiveApiConfigured } from '../api/client';
+import type { Match } from '../types';
+
+// Verifică periodic (doar cât timp aplicația e deschisă) dacă vreo echipă
+// favorită are un meci LIVE, și dacă da, urmărește evenimentele (gol,
+// cartonaș) prin API-Football. Bugetul e limitat (100 cereri/zi gratuit),
+// deci interogăm rar și doar cât există efectiv un meci live de urmărit.
+const SEEN_EVENTS_KEY = 'centralscore-seen-events';
+const POLL_MS = 3 * 60_000;
+
+function eventKey(fixtureId: number, e: { type: string; time: { elapsed: number }; player: { name: string } }) {
+  return `${fixtureId}-${e.type}-${e.time.elapsed}-${e.player.name}`;
+}
+
+function eventText(e: { type: string; detail: string; player: { name: string }; team: { name: string } }) {
+  if (e.type === 'Goal') return `⚽ GOL! ${e.player.name} (${e.team.name})`;
+  if (e.type === 'Card' && e.detail.toLowerCase().includes('red')) return `🟥 Cartonaș roșu: ${e.player.name} (${e.team.name})`;
+  if (e.type === 'Card') return `🟨 Cartonaș galben: ${e.player.name} (${e.team.name})`;
+  return null;
+}
+
+export function useLiveEventAlerts(
+  matches: Match[],
+  favorites: string[],
+  notify: (title: string, body: string) => void
+) {
+  const fixtureIdRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    if (!isLiveApiConfigured || favorites.length === 0) return;
+
+    async function poll() {
+      const liveFavMatch = matches.find(
+        (m) => m.status === 'live' && (favorites.includes(m.homeTeam.id) || favorites.includes(m.awayTeam.id))
+      );
+      if (!liveFavMatch) {
+        fixtureIdRef.current = null;
+        return;
+      }
+
+      try {
+        if (fixtureIdRef.current == null) {
+          fixtureIdRef.current = await findLiveFixtureByTeams(liveFavMatch.homeTeam.name, liveFavMatch.awayTeam.name);
+        }
+        if (fixtureIdRef.current == null) return;
+
+        const events = await fetchFixtureEvents(fixtureIdRef.current);
+        const seen: string[] = JSON.parse(localStorage.getItem(SEEN_EVENTS_KEY) ?? '[]');
+
+        for (const e of events) {
+          const key = eventKey(fixtureIdRef.current, e);
+          if (seen.includes(key)) continue;
+          const text = eventText(e);
+          if (text) notify('CentralScore', text);
+          seen.push(key);
+        }
+        localStorage.setItem(SEEN_EVENTS_KEY, JSON.stringify(seen.slice(-200)));
+      } catch {
+        // budget epuizat sau eroare de rețea — ignorăm silențios, reîncercăm la următorul interval
+      }
+    }
+
+    poll();
+    const interval = setInterval(poll, POLL_MS);
+    return () => clearInterval(interval);
+  }, [matches, favorites, notify]);
+}

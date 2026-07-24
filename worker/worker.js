@@ -5,12 +5,12 @@
 // Rutare:
 //   /sportmonks/<path>   -> https://api.sportmonks.com/v3/football/<path>
 //   /footballdata/<path> -> https://api.football-data.org/v4/<path>
+//   /apifootball/<path>  -> https://v3.football.api-sports.io/<path>
 
 const SPORTMONKS_BASE = 'https://api.sportmonks.com/v3/football';
 const FOOTBALL_DATA_BASE = 'https://api.football-data.org/v4';
+const API_FOOTBALL_BASE = 'https://v3.football.api-sports.io';
 
-// Momentan permis din orice origine, cât timp testezi. Restrânge mai târziu
-// la domeniul real al site-ului tău.
 const ALLOWED_ORIGIN = '*';
 
 export default {
@@ -35,6 +35,11 @@ export default {
       targetUrl = new URL(FOOTBALL_DATA_BASE + subPath);
       url.searchParams.forEach((value, key) => targetUrl.searchParams.set(key, value));
       upstreamHeaders['X-Auth-Token'] = env.FOOTBALL_DATA_TOKEN;
+    } else if (url.pathname.startsWith('/apifootball/')) {
+      const subPath = url.pathname.replace('/apifootball', '');
+      targetUrl = new URL(API_FOOTBALL_BASE + subPath);
+      url.searchParams.forEach((value, key) => targetUrl.searchParams.set(key, value));
+      upstreamHeaders['x-apisports-key'] = env.API_FOOTBALL_KEY;
     } else {
       // Compatibilitate: /sportmonks/<path> sau direct /<path> (comportament vechi).
       const subPath = url.pathname.startsWith('/sportmonks/')
