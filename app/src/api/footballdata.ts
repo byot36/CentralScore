@@ -70,3 +70,19 @@ export async function fetchFootballDataMatchesByDate(date: string): Promise<Matc
   );
   return data.matches.map(mapFDMatch);
 }
+
+// Când nu sunt meciuri azi (pauză de sezon etc.), arătăm în schimb următoarele
+// meciuri programate din fiecare competiție, ca ecranul să nu rămână gol.
+// /v4/matches limitează intervalul dateFrom/dateTo la 10 zile, deci interogăm
+// fiecare competiție separat (fără filtru de dată = tot sezonul curent).
+export async function fetchAllSeasonMatches(): Promise<Match[]> {
+  const results = await Promise.allSettled(
+    Object.values(FOOTBALL_DATA_COMPETITION_IDS).map((id) =>
+      apiGet<{ matches: FDMatch[] }>(`/footballdata/competitions/${id}/matches`)
+    )
+  );
+  return results
+    .filter((r): r is PromiseFulfilledResult<{ matches: FDMatch[] }> => r.status === 'fulfilled')
+    .flatMap((r) => r.value.matches)
+    .map(mapFDMatch);
+}

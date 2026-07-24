@@ -115,7 +115,14 @@ function Summary({ events }: { events: import('../types').MatchEvent[] }) {
 
 function Lineups({ home, away, homeName, awayName }: { home: Lineup; away: Lineup; homeName: string; awayName: string }) {
   if (home.starting.length === 0 && away.starting.length === 0) {
-    return <p className="text-gray-400 text-sm">Aliniațiile oficiale nu au fost anunțate încă. Antrenori: {home.coach.name} vs {away.coach.name}.</p>;
+    const knownCoaches = home.coach.name !== 'Necunoscut' || away.coach.name !== 'Necunoscut';
+    return (
+      <p className="text-gray-400 text-sm">
+        {knownCoaches
+          ? `Aliniațiile oficiale nu au fost anunțate încă. Antrenori: ${home.coach.name} vs ${away.coach.name}.`
+          : 'Aliniații, poziții pe teren și jucători individuali nu sunt disponibile pe planul gratuit al sursei de date folosite.'}
+      </p>
+    );
   }
   return (
     <div className="grid sm:grid-cols-2 gap-6">
