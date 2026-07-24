@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { matches as mockMatches } from '../data/mock';
 import { isLiveApiConfigured } from '../api/client';
 import { fetchFootballDataMatchById } from '../api/footballdata';
+import { useMatches } from '../context/MatchesContext';
 import type { Lineup, Match, Player, TeamStats } from '../types';
 
 const TABS = ['Rezumat', 'Aliniații', 'Statistici', 'Info'] as const;
@@ -11,14 +12,25 @@ type Tab = (typeof TABS)[number];
 export default function MatchDetail() {
   const { id } = useParams();
   const mockMatch = mockMatches.find((m) => m.id === id);
-  const [match, setMatch] = useState<Match | undefined>(mockMatch);
+  const { matches } = useMatches();
+  const knownMatch = matches.find((m) => m.id === id);
+  const [match, setMatch] = useState<Match | undefined>(mockMatch ?? knownMatch);
   const [tab, setTab] = useState<Tab>('Rezumat');
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    if (mockMatch || !isLiveApiConfigured || !id) return;
-    fetchFootballDataMatchById(id).then(setMatch).catch((err) => setError(err.message));
-  }, [id, mockMatch]);
+    // Meciul e deja în lista principală (încărcată o singură dată la pornire)
+    // — evităm o cerere API suplimentară, care altfel se lovea des de limita
+    // de request-uri (eroare 429) a planului gratuit.
+    if (mockMatch || knownMatch || !isLiveApiConfigured || !id) return;
+    fetchFootballDataMatchById(id)
+      .then(setMatch)
+      .catch((err) => setError(err.message?.includes('429') ? 'Prea multe cereri către sursa de date momentan — încearcă din nou peste un minut.' : err.message));
+  }, [id, mockMatch, knownMatch]);
+
+  useEffect(() => {
+    if (knownMatch) setMatch(knownMatch);
+  }, [knownMatch]);
 
   if (!match) {
     return (
