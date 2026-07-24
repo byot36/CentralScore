@@ -19,4 +19,7 @@ export const SPORTMONKS_LEAGUE_IDS: Record<string, number | undefined> = {
   ligue1: undefined,
   liga1ro: undefined,
   liga2ro: undefined,
+  // Singurele ligi acoperite de planul gratuit Sportmonks (verificat prin GET /leagues):
+  'superliga-dk': 271,
+  'premiership-sco': 501,
 };
