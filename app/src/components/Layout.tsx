@@ -39,8 +39,20 @@ export default function Layout() {
               className="sm:hidden p-1 -ml-1"
               aria-label="Meniu"
             >
-              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path strokeLinecap="round" d="M4 6h16M4 12h16M4 18h16" />
+              <svg
+                width="22"
+                height="22"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                className={`transition-transform duration-300 ${menuOpen ? 'rotate-90' : ''}`}
+              >
+                <path
+                  strokeLinecap="round"
+                  className="transition-all duration-300"
+                  d={menuOpen ? 'M6 6l12 12M6 18L18 6' : 'M4 6h16M4 12h16M4 18h16'}
+                />
               </svg>
             </button>
             <Link to="/" className="flex items-center gap-2 font-extrabold text-lg tracking-tight">
@@ -54,7 +66,11 @@ export default function Layout() {
                 <Link
                   key={l.to}
                   to={l.to}
-                  className={location.pathname === l.to ? 'text-white font-medium' : 'hover:text-white'}
+                  className={`relative py-1 transition-colors duration-200 after:absolute after:left-0 after:-bottom-0.5 after:h-0.5 after:bg-[#00c853] after:transition-all after:duration-300 ${
+                    location.pathname === l.to
+                      ? 'text-white font-medium after:w-full'
+                      : 'hover:text-white after:w-0 hover:after:w-full'
+                  }`}
                 >
                   {l.label}
                 </Link>
@@ -72,20 +88,29 @@ export default function Layout() {
             </Link>
           </div>
         </div>
-        {menuOpen && (
-          <nav className="sm:hidden border-t border-white/10 px-4 py-2 flex flex-col gap-1 text-sm">
-            {NAV_LINKS.map((l) => (
-              <Link
-                key={l.to}
-                to={l.to}
-                onClick={() => setMenuOpen(false)}
-                className={`py-2 ${location.pathname === l.to ? 'text-white font-medium' : 'text-gray-300'}`}
-              >
-                {l.label}
-              </Link>
-            ))}
-          </nav>
-        )}
+        <nav
+          className={`sm:hidden grid transition-all duration-300 ease-out ${
+            menuOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+          }`}
+        >
+          <div className="overflow-hidden border-t border-white/10">
+            <div className="px-4 py-2 flex flex-col gap-1 text-sm">
+              {NAV_LINKS.map((l, i) => (
+                <Link
+                  key={l.to}
+                  to={l.to}
+                  onClick={() => setMenuOpen(false)}
+                  style={{ transitionDelay: menuOpen ? `${i * 40}ms` : '0ms' }}
+                  className={`py-2 transition-all duration-200 ${
+                    menuOpen ? 'translate-x-0 opacity-100' : '-translate-x-2 opacity-0'
+                  } ${location.pathname === l.to ? 'text-white font-medium' : 'text-gray-300'}`}
+                >
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+          </div>
+        </nav>
         {!isLiveApiConfigured && (
           <div className="bg-amber-500/10 text-amber-300 text-xs text-center py-1 px-4">
             Mod demo — date de exemplu. Conectează Worker-ul pentru date live.
