@@ -36,7 +36,11 @@ export function MatchesProvider({ children }: { children: ReactNode }) {
     // Odată: tot sezonul pentru fiecare competiție, ca lista să nu fie
     // niciodată goală doar pentru că azi nu joacă nimeni (ex. pauze de vară).
     fetchAllSeasonMatches()
-      .then((season) => setMatches(season.map(remapCompetition)))
+      .then((season) => {
+        // Nu golim lista dacă răspunsul e gol (ex. limită API atinsă temporar
+        // sau tranziție între sezoane) — păstrăm ce aveam deja pe ecran.
+        if (season.length > 0) setMatches(season.map(remapCompetition));
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
 

@@ -1,22 +1,10 @@
 <svg width="1024" height="1024" viewBox="0 0 1024 1024" xmlns="http://www.w3.org/2000/svg">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1024" y2="1024" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#14c15c"/>
+      <stop offset="0" stop-color="#16d766"/>
       <stop offset="1" stop-color="#0a8f45"/>
     </linearGradient>
   </defs>
-
   <rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
-
-  <!-- minge albă, contrast puternic, simplă -->
-  <circle cx="512" cy="512" r="270" fill="#ffffff" stroke="#111827" stroke-width="10"/>
-
-  <polygon points="512,392 566,430 546,494 478,494 458,430" fill="#111827"/>
-  <g stroke="#111827" stroke-width="14" stroke-linecap="round">
-    <line x1="512" y1="392" x2="512" y2="322"/>
-    <line x1="566" y1="430" x2="628" y2="392"/>
-    <line x1="546" y1="494" x2="576" y2="558"/>
-    <line x1="478" y1="494" x2="448" y2="558"/>
-    <line x1="458" y1="430" x2="396" y2="392"/>
-  </g>
+  <circle cx="512" cy="512" r="260" fill="#ffffff" stroke="#161b22" stroke-width="10"/><polygon points="512.0,422.0 597.6,484.2 564.9,584.8 459.1,584.8 426.4,484.2" fill="#161b22"/><line x1="512.0" y1="422.0" x2="512.0" y2="288.4" stroke="#161b22" stroke-width="16" stroke-linecap="round"/><circle cx="512.0" cy="288.4" r="9" fill="#161b22"/><line x1="597.6" y1="484.2" x2="724.7" y2="442.9" stroke="#161b22" stroke-width="16" stroke-linecap="round"/><circle cx="724.7" cy="442.9" r="9" fill="#161b22"/><line x1="564.9" y1="584.8" x2="643.4" y2="692.9" stroke="#161b22" stroke-width="16" stroke-linecap="round"/><circle cx="643.4" cy="692.9" r="9" fill="#161b22"/><line x1="459.1" y1="584.8" x2="380.6" y2="692.9" stroke="#161b22" stroke-width="16" stroke-linecap="round"/><circle cx="380.6" cy="692.9" r="9" fill="#161b22"/><line x1="426.4" y1="484.2" x2="299.3" y2="442.9" stroke="#161b22" stroke-width="16" stroke-linecap="round"/><circle cx="299.3" cy="442.9" r="9" fill="#161b22"/>
 </svg>
