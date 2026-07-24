@@ -84,13 +84,15 @@ export interface Match {
   homeScore: number;
   awayScore: number;
   stadium: string;
-  stadiumCapacity: number;
+  /** undefined = capacitatea stadionului nu e disponibilă din sursa de date */
+  stadiumCapacity?: number;
   referee: string;
   tvChannels: string[];
   manOfTheMatch?: string;
   events: MatchEvent[];
   homeLineup: Lineup;
   awayLineup: Lineup;
-  homeStats: TeamStats;
-  awayStats: TeamStats;
+  /** undefined = statisticile de meci nu sunt disponibile din sursa de date */
+  homeStats?: TeamStats;
+  awayStats?: TeamStats;
 }

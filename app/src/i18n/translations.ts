@@ -70,6 +70,8 @@ const ro: Dict = {
   info_referee: 'Arbitru',
   info_tv: 'Canale TV (România)',
   info_unknown: 'Necunoscut',
+  stats_unavailable: 'Statisticile de meci nu sunt disponibile pe planul gratuit al sursei de date folosite.',
+  info_capacity_unavailable: 'indisponibilă',
   seats: 'locuri',
 
   settings_title: 'Setări',
@@ -171,6 +173,8 @@ const en: Dict = {
   info_referee: 'Referee',
   info_tv: 'TV channels',
   info_unknown: 'Unknown',
+  stats_unavailable: 'Match stats are not available on the free plan of the data source used.',
+  info_capacity_unavailable: 'unavailable',
   seats: 'seats',
 
   settings_title: 'Settings',
@@ -272,6 +276,8 @@ const fr: Dict = {
   info_referee: 'Arbitre',
   info_tv: 'Chaînes TV',
   info_unknown: 'Inconnu',
+  stats_unavailable: 'Les statistiques du match ne sont pas disponibles sur le plan gratuit de la source de données utilisée.',
+  info_capacity_unavailable: 'indisponible',
   seats: 'places',
 
   settings_title: 'Paramètres',
@@ -373,6 +379,8 @@ const es: Dict = {
   info_referee: 'Árbitro',
   info_tv: 'Canales de TV',
   info_unknown: 'Desconocido',
+  stats_unavailable: 'Las estadísticas del partido no están disponibles en el plan gratuito de la fuente de datos usada.',
+  info_capacity_unavailable: 'no disponible',
   seats: 'asientos',
 
   settings_title: 'Ajustes',
@@ -474,6 +482,8 @@ const de: Dict = {
   info_referee: 'Schiedsrichter',
   info_tv: 'TV-Sender',
   info_unknown: 'Unbekannt',
+  stats_unavailable: 'Spielstatistiken sind im kostenlosen Plan der verwendeten Datenquelle nicht verfügbar.',
+  info_capacity_unavailable: 'nicht verfügbar',
   seats: 'Plätze',
 
   settings_title: 'Einstellungen',

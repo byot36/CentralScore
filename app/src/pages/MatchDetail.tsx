@@ -212,8 +212,9 @@ function PlayerRow({ p }: { p: Player }) {
   );
 }
 
-function Stats({ home, away, homeName, awayName }: { home: TeamStats; away: TeamStats; homeName: string; awayName: string }) {
+function Stats({ home, away, homeName, awayName }: { home?: TeamStats; away?: TeamStats; homeName: string; awayName: string }) {
   const { t } = useLanguage();
+  if (!home || !away) return <p className="text-gray-400 text-sm">{t('stats_unavailable')}</p>;
   const rows: [string, number, number][] = [
     [t('stats_possession'), home.possession, away.possession],
     [t('stats_shots'), home.shots, away.shots],
@@ -249,12 +250,12 @@ function Stats({ home, away, homeName, awayName }: { home: TeamStats; away: Team
   );
 }
 
-function InfoTab({ stadium, capacity, referee, tv }: { stadium: string; capacity: number; referee: string; tv: string[] }) {
+function InfoTab({ stadium, capacity, referee, tv }: { stadium: string; capacity?: number; referee: string; tv: string[] }) {
   const { t, locale } = useLanguage();
   return (
     <div className="space-y-3 text-sm">
       <div><span className="text-gray-400">{t('info_stadium')}:</span> {stadium}</div>
-      <div><span className="text-gray-400">{t('info_capacity')}:</span> {capacity.toLocaleString(locale)} {t('seats')}</div>
+      <div><span className="text-gray-400">{t('info_capacity')}:</span> {capacity ? `${capacity.toLocaleString(locale)} ${t('seats')}` : t('info_capacity_unavailable')}</div>
       <div><span className="text-gray-400">{t('info_referee')}:</span> {referee}</div>
       <div><span className="text-gray-400">{t('info_tv')}:</span> {tv.join(', ') || t('info_unknown')}</div>
     </div>

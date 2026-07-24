@@ -1,5 +1,5 @@
 import { apiGet } from './client';
-import type { Match, TeamStats } from '../types';
+import type { Match } from '../types';
 
 // football-data.org (plan gratuit) — acoperă Premier League, La Liga, Serie A,
 // Bundesliga, Ligue 1, Champions League, Cupa Mondială, EURO. Nu oferă
@@ -34,7 +34,6 @@ function mapStatus(status: string): Match['status'] {
 }
 
 function mapFDMatch(m: FDMatch): Match {
-  const zeroStats: TeamStats = { shots: 0, shotsOnTarget: 0, possession: 50, passes: 0, corners: 0, fouls: 0, yellowCards: 0, redCards: 0 };
   return {
     id: `fd-${m.id}`,
     competitionId: String(m.competition.id),
@@ -46,14 +45,15 @@ function mapFDMatch(m: FDMatch): Match {
     homeScore: m.score.fullTime.home ?? 0,
     awayScore: m.score.fullTime.away ?? 0,
     stadium: m.venue ?? '—',
-    stadiumCapacity: 0,
+    // Capacitate, statistici (posesie, suturi etc.) și canale TV nu sunt
+    // disponibile pe planul gratuit football-data.org — lăsăm undefined/gol
+    // în loc de valori inventate (ex. 0 suturi, 50% posesie), ca UI-ul să
+    // afișeze clar "indisponibil" în loc de cifre false.
     referee: m.referees?.[0]?.name ?? '—',
     tvChannels: [],
     events: [],
     homeLineup: { formation: '—', starting: [], bench: [], coach: { id: '', name: 'Necunoscut', birthDate: '', formerClubs: [], playedAsFootballer: false }, unavailable: [] },
     awayLineup: { formation: '—', starting: [], bench: [], coach: { id: '', name: 'Necunoscut', birthDate: '', formerClubs: [], playedAsFootballer: false }, unavailable: [] },
-    homeStats: zeroStats,
-    awayStats: zeroStats,
   };
 }
 
