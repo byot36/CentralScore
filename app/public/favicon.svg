@@ -4,32 +4,23 @@
       <stop offset="0" stop-color="#16233f"/>
       <stop offset="1" stop-color="#0b1220"/>
     </linearGradient>
-    <linearGradient id="ballShine" x1="380" y1="330" x2="700" y2="700" gradientUnits="userSpaceOnUse">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="1" stop-color="#e6e6e6"/>
-    </linearGradient>
   </defs>
 
   <rect width="1024" height="1024" rx="220" fill="url(#bg)"/>
 
-  <!-- subtle scoreboard bar -->
-  <rect x="232" y="700" width="560" height="96" rx="20" fill="#0f172a" stroke="#00c853" stroke-width="6"/>
-  <text x="512" y="768" font-family="Arial, Helvetica, sans-serif" font-size="64" font-weight="700" fill="#00c853" text-anchor="middle">CS</text>
+  <!-- inel accent -->
+  <circle cx="512" cy="512" r="260" fill="none" stroke="#00c853" stroke-width="16" opacity="0.85"/>
 
-  <!-- football -->
-  <circle cx="512" cy="430" r="230" fill="url(#ballShine)"/>
-  <circle cx="512" cy="430" r="230" fill="none" stroke="#1f2937" stroke-width="10"/>
-
-  <!-- pentagon pattern (simple soccer ball look) -->
+  <!-- minge, simplă și curată -->
+  <circle cx="512" cy="512" r="220" fill="#f9fafb"/>
   <g fill="#111827">
-    <polygon points="512,300 570,340 548,408 476,408 454,340"/>
-    <polygon points="512,300 454,340 400,300 430,235 594,235 624,300 570,340"/>
-    <polygon points="476,408 400,430 380,500 440,552 512,520 548,408"/>
-    <polygon points="548,408 512,520 584,552 644,500 624,430"/>
-    <polygon points="400,430 340,400 340,330 400,300"/>
-    <polygon points="624,430 684,400 684,330 624,300"/>
+    <polygon points="512,432 560,466 542,520 482,520 464,466"/>
   </g>
-
-  <!-- accent ring -->
-  <circle cx="512" cy="430" r="256" fill="none" stroke="#00c853" stroke-width="14" opacity="0.9"/>
+  <g stroke="#111827" stroke-width="10" stroke-linecap="round">
+    <line x1="512" y1="432" x2="512" y2="384"/>
+    <line x1="560" y1="466" x2="604" y2="440"/>
+    <line x1="542" y1="520" x2="562" y2="572"/>
+    <line x1="482" y1="520" x2="462" y2="572"/>
+    <line x1="464" y1="466" x2="420" y2="440"/>
+  </g>
 </svg>

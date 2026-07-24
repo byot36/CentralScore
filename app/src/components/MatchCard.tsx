@@ -22,10 +22,11 @@ function formatDateTime(match: Match) {
 
 export default function MatchCard({ match }: { match: Match }) {
   const { isFavorite, toggleFavorite } = useFavorites();
-  const fav = isFavorite(match.homeTeam.id) || isFavorite(match.awayTeam.id);
   const finished = match.status === 'finished';
   const homeWon = finished && match.homeScore > match.awayScore;
   const awayWon = finished && match.awayScore > match.homeScore;
+  const homeFav = isFavorite(match.homeTeam.id);
+  const awayFav = isFavorite(match.awayTeam.id);
 
   return (
     <Link
@@ -46,16 +47,6 @@ export default function MatchCard({ match }: { match: Match }) {
             <span className="text-gray-400">{formatDateTime(match)}</span>
           )}
         </span>
-        <button
-          onClick={(e) => {
-            e.preventDefault();
-            toggleFavorite(match.homeTeam.id);
-          }}
-          className={`text-lg leading-none ${fav ? 'text-yellow-400' : 'text-gray-600'}`}
-          aria-label="Favorite"
-        >
-          ★
-        </button>
       </div>
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -65,6 +56,16 @@ export default function MatchCard({ match }: { match: Match }) {
         <span className={`font-bold text-lg tabular-nums shrink-0 ${finished && !homeWon ? 'text-gray-500' : ''}`}>
           {match.status === 'scheduled' ? '-' : match.homeScore}
         </span>
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            toggleFavorite(match.homeTeam.id);
+          }}
+          className={`text-base leading-none shrink-0 ${homeFav ? 'text-yellow-400' : 'text-gray-600'}`}
+          aria-label={`Favorite ${match.homeTeam.name}`}
+        >
+          ★
+        </button>
       </div>
       <div className="flex items-center justify-between gap-2 mt-2">
         <div className="flex items-center gap-2 min-w-0 flex-1">
@@ -74,6 +75,16 @@ export default function MatchCard({ match }: { match: Match }) {
         <span className={`font-bold text-lg tabular-nums shrink-0 ${finished && !awayWon ? 'text-gray-500' : ''}`}>
           {match.status === 'scheduled' ? '-' : match.awayScore}
         </span>
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            toggleFavorite(match.awayTeam.id);
+          }}
+          className={`text-base leading-none shrink-0 ${awayFav ? 'text-yellow-400' : 'text-gray-600'}`}
+          aria-label={`Favorite ${match.awayTeam.name}`}
+        >
+          ★
+        </button>
       </div>
     </Link>
   );
