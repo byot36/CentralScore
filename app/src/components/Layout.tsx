@@ -1,10 +1,10 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { isLiveApiConfigured } from '../api/client';
 import { useFavorites } from '../context/FavoritesContext';
 import { useNotifications } from '../context/NotificationsContext';
 import { useMatches } from '../context/MatchesContext';
-import { useFavoriteAlerts } from '../hooks/useFavoriteAlerts';
+import { useFavoriteAlerts, requestNotificationPermission } from '../hooks/useFavoriteAlerts';
 import { useLiveEventAlerts } from '../hooks/useLiveEventAlerts';
 
 const NAV_LINKS = [
@@ -21,6 +21,10 @@ export default function Layout() {
   const [menuOpen, setMenuOpen] = useState(false);
   useFavoriteAlerts(matches, favorites, addNotification);
   useLiveEventAlerts(matches, favorites, addNotification);
+
+  useEffect(() => {
+    requestNotificationPermission();
+  }, []);
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0f172a] text-white">
