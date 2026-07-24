@@ -109,6 +109,7 @@ const ro: Dict = {
   comp_seriea: 'Serie A',
   comp_bundesliga: 'Bundesliga',
   comp_ligue1: 'Ligue 1',
+  comp_friendlies: 'Amicale',
 
   alert_match_started: '{home} - {away} a început!',
   alert_match_soon: '{home} - {away} începe în curând!',
@@ -212,6 +213,7 @@ const en: Dict = {
   comp_seriea: 'Serie A',
   comp_bundesliga: 'Bundesliga',
   comp_ligue1: 'Ligue 1',
+  comp_friendlies: 'Friendlies',
 
   alert_match_started: '{home} - {away} has started!',
   alert_match_soon: '{home} - {away} starts soon!',
@@ -315,6 +317,7 @@ const fr: Dict = {
   comp_seriea: 'Serie A',
   comp_bundesliga: 'Bundesliga',
   comp_ligue1: 'Ligue 1',
+  comp_friendlies: 'Amicaux',
 
   alert_match_started: '{home} - {away} a commencé !',
   alert_match_soon: '{home} - {away} commence bientôt !',
@@ -418,6 +421,7 @@ const es: Dict = {
   comp_seriea: 'Serie A',
   comp_bundesliga: 'Bundesliga',
   comp_ligue1: 'Ligue 1',
+  comp_friendlies: 'Amistosos',
 
   alert_match_started: '¡{home} - {away} ha comenzado!',
   alert_match_soon: '¡{home} - {away} empieza pronto!',
@@ -521,6 +525,7 @@ const de: Dict = {
   comp_seriea: 'Serie A',
   comp_bundesliga: 'Bundesliga',
   comp_ligue1: 'Ligue 1',
+  comp_friendlies: 'Freundschaftsspiele',
 
   alert_match_started: '{home} - {away} hat begonnen!',
   alert_match_soon: '{home} - {away} beginnt bald!',

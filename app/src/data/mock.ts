@@ -12,6 +12,7 @@ export const competitions: Competition[] = [
   { id: 'seriea', name: 'Serie A', country: 'Italia', logo: '🇮🇹', featured: true },
   { id: 'bundesliga', name: 'Bundesliga', country: 'Germania', logo: '🇩🇪', featured: true },
   { id: 'ligue1', name: 'Ligue 1', country: 'Franța', logo: '🇫🇷', featured: true },
+  { id: 'friendlies', name: 'Amicale', country: 'Internațional', logo: '🤝', featured: true },
 ];
 
 function player(

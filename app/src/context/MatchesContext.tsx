@@ -6,6 +6,7 @@ import {
   fetchAllSeasonMatches,
   FOOTBALL_DATA_COMPETITION_IDS,
 } from '../api/footballdata';
+import { fetchFriendliesToday } from '../api/apifootball';
 import type { Match } from '../types';
 
 const FOOTBALL_DATA_ID_TO_INTERNAL = Object.fromEntries(
@@ -77,6 +78,21 @@ export function MatchesProvider({ children }: { children: ReactNode }) {
         if (!cached) setError(err.message);
       })
       .finally(() => setLoading(false));
+
+    // Amicalele internaționale de azi — cerere unică, de la API-Football (nu
+    // sunt pe football-data.org), ca să nu irosim bugetul zilnic limitat.
+    fetchFriendliesToday()
+      .then((friendlies) => {
+        if (friendlies.length === 0) return;
+        setMatches((prev) => {
+          const byId = new Map(prev.map((m) => [m.id, m]));
+          for (const m of friendlies) byId.set(m.id, m);
+          const next = Array.from(byId.values());
+          saveCachedMatches(next);
+          return next;
+        });
+      })
+      .catch(() => {});
 
     // Periodic: doar meciurile de azi, ca să actualizăm scor/status live
     // fără să reinterogăm întregul sezon de fiecare dată.
