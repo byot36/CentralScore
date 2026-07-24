@@ -75,6 +75,7 @@ export default {
   // Rulează la fiecare minut (configurat ca Cron Trigger în Cloudflare).
   async scheduled(event, env, ctx) {
     ctx.waitUntil(checkFavoriteMatches(env));
+    ctx.waitUntil(checkForAppUpdate(env));
   },
 };
 
@@ -169,6 +170,51 @@ async function checkFavoriteMatches(env) {
     await env.MATCH_STATE.put(stateKey, JSON.stringify({ status, homeScore, awayScore }), {
       expirationTtl: 60 * 60 * 12,
     });
+  }
+}
+
+// ---- Verificare versiune nouă de APK + push la toate telefoanele înregistrate ----
+
+async function checkForAppUpdate(env) {
+  // GitHub API permite 60 cereri/oră neautentificat — verificăm o dată la
+  // ~10 minute (nu la fiecare rulare de minut a cron-ului) ca să nu depășim.
+  const lastCheckRaw = await env.MATCH_STATE.get('app-update-last-check');
+  const now = Date.now();
+  if (lastCheckRaw && now - Number(lastCheckRaw) < 10 * 60_000) return;
+  await env.MATCH_STATE.put('app-update-last-check', String(now), { expirationTtl: 3600 });
+
+  try {
+    const res = await fetch('https://api.github.com/repos/byot36/CentralScore/releases/latest', {
+      headers: { Accept: 'application/vnd.github+json', 'User-Agent': 'CentralScore-Worker' },
+    });
+    if (!res.ok) return;
+    const release = await res.json();
+    const latestTag = release.tag_name;
+    const asset = (release.assets ?? []).find((a) => a.name === 'CentralScore.apk');
+    if (!latestTag || !asset) return;
+
+    const knownTag = await env.MATCH_STATE.get('app-latest-known-version');
+    if (knownTag === latestTag) return;
+    const isFirstRun = knownTag === null;
+    await env.MATCH_STATE.put('app-latest-known-version', latestTag, { expirationTtl: 60 * 60 * 24 * 90 });
+    if (isFirstRun) return; // nu trimitem push la prima rulare a Worker-ului, doar reținem versiunea curentă
+
+    const tokenList = await env.PUSH_TOKENS.list();
+    if (tokenList.keys.length === 0) return;
+    const accessToken = await getFcmAccessToken(env);
+    if (!accessToken) return;
+
+    const version = latestTag.replace(/^v/, '');
+    const evt = {
+      title: 'CentralScore',
+      body: `Versiunea ${version} este disponibilă. Apasă pentru a actualiza.`,
+      sound: 'whistle_start',
+    };
+    for (const key of tokenList.keys) {
+      await sendFcmPush(env, accessToken, key.name, evt);
+    }
+  } catch {
+    // eroare de rețea/API — reîncercăm la următoarea verificare programată
   }
 }
 
