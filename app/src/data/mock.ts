@@ -12,8 +12,6 @@ export const competitions: Competition[] = [
   { id: 'seriea', name: 'Serie A', country: 'Italia', logo: '🇮🇹', featured: true },
   { id: 'bundesliga', name: 'Bundesliga', country: 'Germania', logo: '🇩🇪', featured: true },
   { id: 'ligue1', name: 'Ligue 1', country: 'Franța', logo: '🇫🇷', featured: true },
-  { id: 'liga1ro', name: 'Superliga României', country: 'România', logo: '🇷🇴', featured: true },
-  { id: 'liga2ro', name: 'Liga a 2-a a României', country: 'România', logo: '🇷🇴', featured: true },
 ];
 
 function player(
