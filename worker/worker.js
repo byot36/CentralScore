@@ -75,6 +75,7 @@ export default {
   // Rulează la fiecare minut (configurat ca Cron Trigger în Cloudflare).
   async scheduled(event, env, ctx) {
     ctx.waitUntil(checkFavoriteMatches(env));
+    ctx.waitUntil(checkFriendlyMatches(env));
     ctx.waitUntil(checkForAppUpdate(env));
   },
 };
@@ -170,6 +171,96 @@ async function checkFavoriteMatches(env) {
     await env.MATCH_STATE.put(stateKey, JSON.stringify({ status, homeScore, awayScore }), {
       expirationTtl: 60 * 60 * 12,
     });
+  }
+}
+
+// ---- Verificare meciuri amicale favorizate + trimitere notificări ----
+// API-Football are un buget zilnic foarte mic (100 cereri gratuite, partajat
+// între toți utilizatorii aplicației) — verificăm doar o dată la ~15 minute
+// (nu la fiecare minut, ca la football-data.org), și doar dacă există măcar
+// un token înregistrat cu echipe favorizate.
+
+async function checkFriendlyMatches(env) {
+  const lastCheckRaw = await env.MATCH_STATE.get('friendly-check-last');
+  const now = Date.now();
+  if (lastCheckRaw && now - Number(lastCheckRaw) < 15 * 60_000) return;
+
+  const tokenList = await env.PUSH_TOKENS.list();
+  if (tokenList.keys.length === 0) return;
+
+  const tokenTeams = new Map();
+  for (const key of tokenList.keys) {
+    const raw = await env.PUSH_TOKENS.get(key.name);
+    if (!raw) continue;
+    const { teams } = JSON.parse(raw);
+    for (const t of teams) {
+      const norm = String(t).toLowerCase();
+      if (!tokenTeams.has(norm)) tokenTeams.set(norm, new Set());
+      tokenTeams.get(norm).add(key.name);
+    }
+  }
+  if (tokenTeams.size === 0) return;
+
+  // Doar acum marcăm verificarea ca "făcută" — dacă n-am ajuns până aici
+  // (fără tokenuri/echipe), nu consumăm din bugetul de 15 minute degeaba.
+  await env.MATCH_STATE.put('friendly-check-last', String(now), { expirationTtl: 3600 });
+
+  try {
+    const today = new Date().toISOString().slice(0, 10);
+    const season = new Date().getFullYear();
+    const res = await fetch(
+      `${API_FOOTBALL_BASE}/fixtures?league=5&season=${season}&date=${today}`,
+      { headers: { 'x-apisports-key': env.API_FOOTBALL_KEY, Accept: 'application/json' } }
+    );
+    if (!res.ok) return;
+    const data = await res.json();
+    const fixtures = data.response ?? [];
+
+    const accessToken = await getFcmAccessToken(env);
+    if (!accessToken) return;
+
+    for (const f of fixtures) {
+      const homeNorm = f.teams.home.name.toLowerCase();
+      const awayNorm = f.teams.away.name.toLowerCase();
+      const interested = new Set([
+        ...(tokenTeams.get(homeNorm) ?? []),
+        ...(tokenTeams.get(awayNorm) ?? []),
+      ]);
+      if (interested.size === 0) continue;
+
+      const stateKey = `friendly-${f.fixture.id}`;
+      const prevRaw = await env.MATCH_STATE.get(stateKey);
+      const prev = prevRaw ? JSON.parse(prevRaw) : null;
+      const status = f.fixture.status.short;
+      const homeScore = f.goals.home ?? 0;
+      const awayScore = f.goals.away ?? 0;
+      const isLive = ['1H', '2H', 'HT', 'ET', 'P', 'LIVE'].includes(status);
+      const isFinished = ['FT', 'AET', 'PEN'].includes(status);
+
+      const events = [];
+      if (isLive && (!prev || !['1H', '2H', 'HT', 'ET', 'P', 'LIVE', 'FT', 'AET', 'PEN'].includes(prev.status))) {
+        events.push({ title: 'CentralScore', body: `${f.teams.home.name} - ${f.teams.away.name} a început!`, sound: 'whistle_start' });
+      }
+      if (isFinished && prev && !['FT', 'AET', 'PEN'].includes(prev.status)) {
+        events.push({ title: 'CentralScore', body: `Final: ${f.teams.home.name} ${homeScore} - ${awayScore} ${f.teams.away.name}`, sound: 'whistle_end' });
+      }
+      if (prev && (homeScore !== prev.homeScore || awayScore !== prev.awayScore) && !isFinished) {
+        const scorer = homeScore > prev.homeScore ? f.teams.home.name : f.teams.away.name;
+        events.push({ title: 'CentralScore', body: `⚽ GOL! ${scorer} — ${homeScore}-${awayScore}`, sound: 'goal_sound' });
+      }
+
+      for (const evt of events) {
+        for (const fcmToken of interested) {
+          await sendFcmPush(env, accessToken, fcmToken, evt);
+        }
+      }
+
+      await env.MATCH_STATE.put(stateKey, JSON.stringify({ status, homeScore, awayScore }), {
+        expirationTtl: 60 * 60 * 12,
+      });
+    }
+  } catch {
+    // eroare de rețea/API sau buget epuizat — reîncercăm la următoarea verificare programată
   }
 }
 
