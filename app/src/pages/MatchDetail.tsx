@@ -37,18 +37,30 @@ export default function MatchDetail() {
         <div className="text-xs text-gray-400 mb-2">
           {match.status === 'live' ? (
             <span className="text-[#00c853] font-semibold">● Live · {match.minute}'</span>
-          ) : match.status === 'finished' ? 'Final' : `${match.date} · ${match.time}`}
+          ) : match.status === 'finished' ? 'Final' : (
+            new Date(`${match.date}T${match.time}:00`).toLocaleString('ro-RO', {
+              day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+            })
+          )}
         </div>
         <div className="flex items-center justify-center gap-6">
           <div className="flex flex-col items-center gap-1 w-28">
-            <span className="text-3xl">{match.homeTeam.logo}</span>
+            {match.homeTeam.logo.startsWith('http') ? (
+              <img src={match.homeTeam.logo} alt={match.homeTeam.name} className="w-10 h-10 object-contain" />
+            ) : (
+              <span className="text-3xl">{match.homeTeam.logo}</span>
+            )}
             <span className="font-medium text-sm">{match.homeTeam.name}</span>
           </div>
           <div className="text-3xl font-bold tabular-nums">
             {match.status === 'scheduled' ? '-' : match.homeScore} - {match.status === 'scheduled' ? '-' : match.awayScore}
           </div>
           <div className="flex flex-col items-center gap-1 w-28">
-            <span className="text-3xl">{match.awayTeam.logo}</span>
+            {match.awayTeam.logo.startsWith('http') ? (
+              <img src={match.awayTeam.logo} alt={match.awayTeam.name} className="w-10 h-10 object-contain" />
+            ) : (
+              <span className="text-3xl">{match.awayTeam.logo}</span>
+            )}
             <span className="font-medium text-sm">{match.awayTeam.name}</span>
           </div>
         </div>
