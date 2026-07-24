@@ -59,22 +59,22 @@ export function MatchesProvider({ children }: { children: ReactNode }) {
 
     // Odată: tot sezonul pentru fiecare competiție, ca lista să nu fie
     // niciodată goală doar pentru că azi nu joacă nimeni (ex. pauze de vară).
-    let receivedAny = false;
-    let latestMatches: Match[] = cached ?? [];
+    // Acumulăm în fundal și schimbăm ecranul o singură dată, la final — nu
+    // liga câte una pe măsură ce sosesc (arăta neprofesional, "sărea" ecranul).
+    let accumulated: Match[] = [];
     fetchAllSeasonMatches((competitionMatches) => {
-      receivedAny = true;
-      const remapped = competitionMatches.map(remapCompetition);
-      setMatches((prev) => {
-        const byId = new Map(prev.map((m) => [m.id, m]));
-        for (const m of remapped) byId.set(m.id, m);
-        latestMatches = Array.from(byId.values());
-        return latestMatches;
-      });
-      setLoading(false);
+      accumulated = accumulated.concat(competitionMatches.map(remapCompetition));
     })
-      .then(() => saveCachedMatches(latestMatches))
+      .then(() => {
+        if (accumulated.length === 0) return;
+        const byId = new Map((cached ?? []).map((m) => [m.id, m]));
+        for (const m of accumulated) byId.set(m.id, m);
+        const merged = Array.from(byId.values());
+        setMatches(merged);
+        saveCachedMatches(merged);
+      })
       .catch((err) => {
-        if (!receivedAny) setError(err.message);
+        if (!cached) setError(err.message);
       })
       .finally(() => setLoading(false));
 
