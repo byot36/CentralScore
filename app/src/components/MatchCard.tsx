@@ -23,20 +23,27 @@ function formatDateTime(match: Match) {
 export default function MatchCard({ match }: { match: Match }) {
   const { isFavorite, toggleFavorite } = useFavorites();
   const fav = isFavorite(match.homeTeam.id) || isFavorite(match.awayTeam.id);
+  const finished = match.status === 'finished';
+  const homeWon = finished && match.homeScore > match.awayScore;
+  const awayWon = finished && match.awayScore > match.homeScore;
 
   return (
     <Link
       to={`/match/${match.id}`}
-      className="block bg-[#111827] border border-white/10 rounded-lg px-4 py-3 hover:border-[#00c853]/50 transition-colors"
+      className={`block rounded-lg px-4 py-3 border transition-colors ${
+        finished
+          ? 'bg-[#0d1420] border-white/5 hover:border-white/15'
+          : 'bg-[#111827] border-white/10 hover:border-[#00c853]/50'
+      }`}
     >
-      <div className="flex items-center justify-between text-xs text-gray-400 mb-3">
+      <div className="flex items-center justify-between text-xs mb-3">
         <span>
           {match.status === 'live' ? (
             <span className="text-[#00c853] font-semibold">● Live · {match.minute}'</span>
-          ) : match.status === 'finished' ? (
-            'Final'
+          ) : finished ? (
+            <span className="bg-white/10 text-gray-400 px-2 py-0.5 rounded-full font-medium">Final</span>
           ) : (
-            formatDateTime(match)
+            <span className="text-gray-400">{formatDateTime(match)}</span>
           )}
         </span>
         <button
@@ -53,18 +60,18 @@ export default function MatchCard({ match }: { match: Match }) {
       <div className="flex items-center justify-between gap-2">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <TeamCrest logo={match.homeTeam.logo} name={match.homeTeam.name} />
-          <span className="font-medium truncate">{match.homeTeam.name}</span>
+          <span className={`font-medium truncate ${finished && !homeWon ? 'text-gray-500' : ''}`}>{match.homeTeam.name}</span>
         </div>
-        <span className="font-bold text-lg tabular-nums shrink-0">
+        <span className={`font-bold text-lg tabular-nums shrink-0 ${finished && !homeWon ? 'text-gray-500' : ''}`}>
           {match.status === 'scheduled' ? '-' : match.homeScore}
         </span>
       </div>
       <div className="flex items-center justify-between gap-2 mt-2">
         <div className="flex items-center gap-2 min-w-0 flex-1">
           <TeamCrest logo={match.awayTeam.logo} name={match.awayTeam.name} />
-          <span className="font-medium truncate">{match.awayTeam.name}</span>
+          <span className={`font-medium truncate ${finished && !awayWon ? 'text-gray-500' : ''}`}>{match.awayTeam.name}</span>
         </div>
-        <span className="font-bold text-lg tabular-nums shrink-0">
+        <span className={`font-bold text-lg tabular-nums shrink-0 ${finished && !awayWon ? 'text-gray-500' : ''}`}>
           {match.status === 'scheduled' ? '-' : match.awayScore}
         </span>
       </div>

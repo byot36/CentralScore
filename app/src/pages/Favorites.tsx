@@ -1,10 +1,11 @@
-import { matches } from '../data/mock';
 import MatchCard from '../components/MatchCard';
 import { useFavorites } from '../context/FavoritesContext';
+import { useMatches } from '../context/MatchesContext';
 import { requestNotificationPermission } from '../hooks/useFavoriteAlerts';
 
 export default function Favorites() {
   const { favorites } = useFavorites();
+  const { matches } = useMatches();
   const favMatches = matches.filter(
     (m) => favorites.includes(m.homeTeam.id) || favorites.includes(m.awayTeam.id)
   );
@@ -26,8 +27,9 @@ export default function Favorites() {
       </div>
       {favMatches.length === 0 ? (
         <p className="text-gray-400 text-sm">
-          Nu ai nicio echipă favorită încă. Apasă ★ pe un meci pentru a adăuga echipa la favorite —
-          vei primi notificare (cât timp ai aplicația deschisă) când urmează să joace.
+          {favorites.length === 0
+            ? 'Nu ai nicio echipă favorită încă. Apasă ★ pe un meci pentru a adăuga echipa la favorite — vei primi notificare (cât timp ai aplicația deschisă) când urmează să joace.'
+            : 'Echipele tale favorite nu au niciun meci programat momentan.'}
         </p>
       ) : (
         <div className="grid gap-2 sm:grid-cols-2">
