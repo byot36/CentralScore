@@ -1,8 +1,25 @@
-import { competitions, matches } from '../data/mock';
+import { useEffect, useState } from 'react';
+import { competitions, matches as mockMatches } from '../data/mock';
+import { SPORTMONKS_LEAGUE_IDS } from '../data/league-ids';
 import MatchCard from '../components/MatchCard';
+import { isLiveApiConfigured } from '../api/client';
+import { fetchFixturesByDate } from '../api/sportmonks';
+import type { Match } from '../types';
 
 export default function Home() {
   const featured = competitions.filter((c) => c.featured);
+  const [matches, setMatches] = useState<Match[]>(mockMatches);
+  const [loading, setLoading] = useState(isLiveApiConfigured);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!isLiveApiConfigured) return;
+    const today = new Date().toISOString().slice(0, 10);
+    fetchFixturesByDate(today)
+      .then(setMatches)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, []);
 
   return (
     <div className="space-y-8">
@@ -21,8 +38,16 @@ export default function Home() {
         </div>
       </div>
 
+      {loading && <p className="text-sm text-gray-400">Se încarcă meciurile live...</p>}
+      {error && <p className="text-sm text-red-400">Eroare la încărcarea datelor live: {error}</p>}
+
       {featured.map((comp) => {
-        const compMatches = matches.filter((m) => m.competitionId === comp.id);
+        const sportmonksId = SPORTMONKS_LEAGUE_IDS[comp.id];
+        const compMatches = matches.filter((m) =>
+          isLiveApiConfigured
+            ? sportmonksId != null && m.competitionId === String(sportmonksId)
+            : m.competitionId === comp.id
+        );
         if (compMatches.length === 0) return null;
         return (
           <section key={comp.id}>

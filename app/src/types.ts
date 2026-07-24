@@ -10,6 +10,8 @@ export interface Competition {
   country: string;
   logo: string;
   featured: boolean;
+  /** ID-ul numeric al ligii în Sportmonks — completează-l după ce vezi ID-urile reale din API (vezi src/data/league-ids.ts). */
+  sportmonksId?: number;
 }
 
 export interface Player {

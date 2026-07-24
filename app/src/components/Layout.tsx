@@ -1,7 +1,13 @@
 import { Link, Outlet } from 'react-router-dom';
 import { isLiveApiConfigured } from '../api/client';
+import { matches } from '../data/mock';
+import { useFavorites } from '../context/FavoritesContext';
+import { useFavoriteAlerts } from '../hooks/useFavoriteAlerts';
 
 export default function Layout() {
+  const { favorites } = useFavorites();
+  useFavoriteAlerts(matches, favorites);
+
   return (
     <div className="min-h-screen flex flex-col bg-[#0f172a] text-white">
       <header className="sticky top-0 z-10 border-b border-white/10 bg-[#0f172a]/95 backdrop-blur">

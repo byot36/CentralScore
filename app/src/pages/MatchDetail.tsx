@@ -1,20 +1,29 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
-import { matches } from '../data/mock';
-import type { Lineup, Player, TeamStats } from '../types';
+import { matches as mockMatches } from '../data/mock';
+import { isLiveApiConfigured } from '../api/client';
+import { fetchFixtureById } from '../api/sportmonks';
+import type { Lineup, Match, Player, TeamStats } from '../types';
 
 const TABS = ['Rezumat', 'Aliniații', 'Statistici', 'Info'] as const;
 type Tab = (typeof TABS)[number];
 
 export default function MatchDetail() {
   const { id } = useParams();
-  const match = matches.find((m) => m.id === id);
+  const mockMatch = mockMatches.find((m) => m.id === id);
+  const [match, setMatch] = useState<Match | undefined>(mockMatch);
   const [tab, setTab] = useState<Tab>('Rezumat');
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (mockMatch || !isLiveApiConfigured || !id) return;
+    fetchFixtureById(id).then(setMatch).catch((err) => setError(err.message));
+  }, [id, mockMatch]);
 
   if (!match) {
     return (
       <div>
-        <p>Meciul nu a fost găsit.</p>
+        <p>{error ? `Eroare: ${error}` : 'Se încarcă...'}</p>
         <Link to="/" className="text-[#00c853]">Înapoi</Link>
       </div>
     );
