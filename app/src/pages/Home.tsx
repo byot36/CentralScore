@@ -32,7 +32,7 @@ export default function Home() {
   const featured = competitions.filter((c) => c.featured);
   const { matches, loading, error } = useMatches();
   const { t } = useLanguage();
-  const [selectedLeague, setSelectedLeague] = useState<string | null>(null);
+  const [selectedLeague, setSelectedLeague] = useState<string | null>('epl');
   const compName = (id: string) => t(`comp_${id}`);
 
   const groups = featured
@@ -47,7 +47,11 @@ export default function Home() {
       });
     });
 
-  const visibleGroups = selectedLeague ? groups.filter((g) => g.comp.id === selectedLeague) : groups;
+  const selectedGroups = selectedLeague ? groups.filter((g) => g.comp.id === selectedLeague) : groups;
+  // Dacă liga selectată implicit (Premier League) nu are momentan meciuri
+  // (ex. pauză de sezon), arătăm toate ligile în loc de un ecran gol.
+  const visibleGroups = selectedGroups.length > 0 ? selectedGroups : groups;
+  const effectiveSelection = selectedGroups.length > 0 ? selectedLeague : null;
 
   return (
     <div className="space-y-8">
@@ -57,9 +61,9 @@ export default function Home() {
           {groups.map(({ comp }) => (
             <button
               key={comp.id}
-              onClick={() => setSelectedLeague(comp.id === selectedLeague ? null : comp.id)}
+              onClick={() => setSelectedLeague(comp.id === effectiveSelection ? null : comp.id)}
               className={`shrink-0 flex items-center gap-2 border rounded-full px-3 py-1.5 text-sm transition-colors ${
-                comp.id === selectedLeague
+                comp.id === effectiveSelection
                   ? 'bg-[#00c853]/10 border-[#00c853] text-white'
                   : 'bg-[#111827] border-white/10 hover:border-[#00c853]/50'
               }`}
@@ -76,13 +80,13 @@ export default function Home() {
 
       {visibleGroups.map(({ comp, compMatches }) => (
         <section key={comp.id}>
-          {!selectedLeague && (
+          {!effectiveSelection && (
             <h2 className="flex items-center gap-2 text-sm font-semibold text-gray-300 mb-2">
               <span>{comp.logo}</span> {compName(comp.id)}
             </h2>
           )}
           <div className="grid gap-2 sm:grid-cols-2">
-            {(selectedLeague ? compMatches : compMatches.slice(0, MAX_PER_COMPETITION)).map((m) => (
+            {(effectiveSelection ? compMatches : compMatches.slice(0, MAX_PER_COMPETITION)).map((m) => (
               <MatchCard key={m.id} match={m} />
             ))}
           </div>
