@@ -132,7 +132,7 @@ function mapFriendly(f: FriendlyFixture): Match {
 // acestor cluburi și păstrăm doar meciurile a căror ligă conține
 // "friendl" — prinde amicale reale care ar fi ratate altfel.
 const FRIENDLY_WATCH_CLUB_IDS = [
-  157, 165, // Bayern Munich, Borussia Dortmund
+  157, 165, 168, 173, 172, // Bayern Munich, Dortmund, Bayer Leverkusen, RB Leipzig, VfB Stuttgart
   33, 40, 42, 50, 47, 49, // Man United, Liverpool, Arsenal, Man City, Tottenham, Chelsea
   541, 529, 530, // Real Madrid, Barcelona, Atletico Madrid
   505, 496, 489, // Inter, Juventus, AC Milan
