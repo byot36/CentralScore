@@ -35,10 +35,9 @@ jobs:
       - name: Assemble site
         run: |
           mkdir -p site
-          cp index.html .nojekyll site/
+          cp -r app/dist/. site/
+          cp .nojekyll site/
           cp -r .well-known site/ 2>/dev/null || true
-          mkdir -p site/app
-          cp -r app/dist/. site/app/
 
       - uses: actions/upload-pages-artifact@v3
         with:
