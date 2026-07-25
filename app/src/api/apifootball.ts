@@ -125,28 +125,47 @@ function mapFriendly(f: FriendlyFixture): Match {
   };
 }
 
+// Cluburi mari urmărite explicit pentru amicale — unele amicale (ex. cele
+// de pregătire ale marilor cluburi, ca Bayern) nu sunt clasificate de
+// API-Football nici în liga 5 ("World - Friendlies"), nici în 667 ("Club
+// Friendlies"), ci apar direct în programul echipei. Interogăm și programul
+// acestor cluburi și păstrăm doar meciurile a căror ligă conține
+// "friendl" — prinde amicale reale care ar fi ratate altfel.
+const FRIENDLY_WATCH_CLUB_IDS = [
+  157, 165, // Bayern Munich, Borussia Dortmund
+  33, 40, 42, 50, 47, 49, // Man United, Liverpool, Arsenal, Man City, Tottenham, Chelsea
+  541, 529, 530, // Real Madrid, Barcelona, Atletico Madrid
+  505, 496, 489, // Inter, Juventus, AC Milan
+  85, // PSG
+];
+
 // Meciuri amicale — nu sunt disponibile pe football-data.org (planul
-// gratuit), doar prin API-Football. Amicalele sunt împărțite pe mai multe
-// ligi: 5 = "World - Friendlies" (naționale), 667 = "Club Friendlies".
-// Am încercat și varianta "cere toate meciurile din lume de azi, fără
-// filtru de ligă" — dar răspunsul e uriaș (mii de meciuri din toate
-// competițiile) și poate depăși timeout-ul sau limita de payload, făcând
-// amicalele să dispară complet din listă. Cerem deci explicit doar aceste
-// două ligi cunoscute — mai rapid și mai fiabil, chiar dacă teoretic ar
-// putea rata un amical dintr-o ligă foarte obscură.
-// Nu cerem doar "azi" — arătăm o fereastră de 7 zile (azi + următoarele 6),
-// ca amicalele viitoare (mâine, poimâine etc.) să fie vizibile din timp, nu
-// doar în ziua exactă în care se joacă.
+// gratuit), doar prin API-Football. Combinăm 3 surse: liga 5 ("World -
+// Friendlies", naționale), liga 667 ("Club Friendlies") și programul
+// cluburilor mari urmărite explicit (vezi mai sus) — filtrat după numele
+// ligii. Am încercat și "cere toate meciurile din lume de azi, fără filtru"
+// — răspunsul e uriaș și poate depăși timeout-ul, făcând amicalele să
+// dispară complet, de-aia folosim cereri direcționate. Fereastra e de 7
+// zile (azi + următoarele 6), ca amicalele viitoare să fie vizibile din timp.
 export async function fetchFriendliesToday(): Promise<Match[]> {
   const from = new Date().toISOString().slice(0, 10);
   const to = new Date(Date.now() + 6 * 24 * 3600_000).toISOString().slice(0, 10);
   const season = new Date().getFullYear();
-  const [international, club] = await Promise.all([
+  const [international, club, ...clubSchedules] = await Promise.all([
     apiGet<{ response: FriendlyFixture[] }>(`/apifootball/fixtures?league=5&season=${season}&from=${from}&to=${to}`),
     apiGet<{ response: FriendlyFixture[] }>(`/apifootball/fixtures?league=667&season=${season}&from=${from}&to=${to}`),
+    ...FRIENDLY_WATCH_CLUB_IDS.map((id) =>
+      apiGet<{ response: FriendlyFixture[] }>(`/apifootball/fixtures?team=${id}&from=${from}&to=${to}`).catch(
+        () => ({ response: [] })
+      )
+    ),
   ]);
+  const fromClubSchedules = clubSchedules
+    .flatMap((r) => r.response)
+    .filter((f) => f.league.name.toLowerCase().includes('friendl'));
+
   const seen = new Set<number>();
-  const combined = [...international.response, ...club.response].filter((f) => {
+  const combined = [...international.response, ...club.response, ...fromClubSchedules].filter((f) => {
     if (seen.has(f.fixture.id)) return false;
     seen.add(f.fixture.id);
     return true;
