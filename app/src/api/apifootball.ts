@@ -134,12 +134,16 @@ function mapFriendly(f: FriendlyFixture): Match {
 // amicalele să dispară complet din listă. Cerem deci explicit doar aceste
 // două ligi cunoscute — mai rapid și mai fiabil, chiar dacă teoretic ar
 // putea rata un amical dintr-o ligă foarte obscură.
+// Nu cerem doar "azi" — arătăm o fereastră de 7 zile (azi + următoarele 6),
+// ca amicalele viitoare (mâine, poimâine etc.) să fie vizibile din timp, nu
+// doar în ziua exactă în care se joacă.
 export async function fetchFriendliesToday(): Promise<Match[]> {
-  const today = new Date().toISOString().slice(0, 10);
+  const from = new Date().toISOString().slice(0, 10);
+  const to = new Date(Date.now() + 6 * 24 * 3600_000).toISOString().slice(0, 10);
   const season = new Date().getFullYear();
   const [international, club] = await Promise.all([
-    apiGet<{ response: FriendlyFixture[] }>(`/apifootball/fixtures?league=5&season=${season}&date=${today}`),
-    apiGet<{ response: FriendlyFixture[] }>(`/apifootball/fixtures?league=667&season=${season}&date=${today}`),
+    apiGet<{ response: FriendlyFixture[] }>(`/apifootball/fixtures?league=5&season=${season}&from=${from}&to=${to}`),
+    apiGet<{ response: FriendlyFixture[] }>(`/apifootball/fixtures?league=667&season=${season}&from=${from}&to=${to}`),
   ]);
   const seen = new Set<number>();
   const combined = [...international.response, ...club.response].filter((f) => {
