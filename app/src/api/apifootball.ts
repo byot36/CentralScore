@@ -191,6 +191,15 @@ function mapFriendly(f: FriendlyFixture): Match {
   };
 }
 
+// Actualizare live ieftină (o singură cerere) pentru amicalele aflate în
+// desfășurare — folosită periodic, ca scorul și minutul să se actualizeze
+// în timp real, nu doar la deschiderea aplicației.
+export async function fetchLiveFriendlies(): Promise<Match[]> {
+  const data = await apiGet<{ response: FriendlyFixture[] }>('/apifootball/fixtures?live=all');
+  const friendlies = data.response.filter((f) => f.league.name.toLowerCase().includes('friendl'));
+  return friendlies.map(mapFriendly);
+}
+
 // Cluburi mari urmărite explicit pentru amicale — unele amicale (ex. cele
 // de pregătire ale marilor cluburi, ca Bayern) nu sunt clasificate de
 // API-Football nici în liga 5 ("World - Friendlies"), nici în 667 ("Club

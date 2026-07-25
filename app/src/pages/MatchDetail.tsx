@@ -38,43 +38,53 @@ export default function MatchDetail() {
   useEffect(() => {
     // Amicalele nu vin cu evenimente (goluri/cartonașe) incluse, spre
     // deosebire de meciurile din ligile de pe football-data.org — le cerem
-    // separat, o singură dată, la deschiderea paginii meciului.
-    if (!match || match.competitionId !== 'friendlies' || match.events.length > 0) return;
+    // separat de la API-Football. Cât timp meciul e live, reîmprospătăm
+    // periodic (nu doar o dată la deschidere), ca golurile/cartonașele noi
+    // să apară fără să reîncarci pagina.
+    if (!match || match.competitionId !== 'friendlies') return;
     const fixtureId = Number(match.id.replace('af-friendly-', ''));
     const homeTeamId = Number(match.homeTeam.id.replace('af-team-', ''));
     if (!fixtureId || !homeTeamId) return;
-    fetchFixtureEvents(fixtureId)
-      .then((events) => {
-        const mapped = mapFootballEventsToMatchEvents(events, homeTeamId);
-        setMatch((prev) => {
-          if (!prev) return prev;
-          // Marcaje reale de "început meci" / "fluier final", derivate din
-          // starea reală cunoscută a meciului (nu inventate) — fac
-          // rezumatul să pară un flux live chiar și la meciuri fără
-          // goluri/cartonașe.
-          const markers: Match['events'] = [];
-          if (prev.status === 'live' || prev.status === 'finished') {
-            markers.push({ minute: 0, type: 'comment', team: 'home', text: t('summary_kickoff') });
-          }
-          if (prev.status === 'finished') {
-            markers.push({
-              minute: 90,
-              type: 'comment',
-              team: 'home',
-              text: t('summary_fulltime', {
-                home: prev.homeTeam.name,
-                away: prev.awayTeam.name,
-                homeScore: prev.homeScore,
-                awayScore: prev.awayScore,
-              }),
-            });
-          }
-          return { ...prev, events: [...markers, ...mapped] };
-        });
-      })
-      .catch(() => {});
+
+    function refetchEvents() {
+      fetchFixtureEvents(fixtureId)
+        .then((events) => {
+          const mapped = mapFootballEventsToMatchEvents(events, homeTeamId);
+          setMatch((prev) => {
+            if (!prev) return prev;
+            // Marcaje reale de "început meci" / "fluier final", derivate din
+            // starea reală cunoscută a meciului (nu inventate) — fac
+            // rezumatul să pară un flux live chiar și la meciuri fără
+            // goluri/cartonașe.
+            const markers: Match['events'] = [];
+            if (prev.status === 'live' || prev.status === 'finished') {
+              markers.push({ minute: 0, type: 'comment', team: 'home', text: t('summary_kickoff') });
+            }
+            if (prev.status === 'finished') {
+              markers.push({
+                minute: 90,
+                type: 'comment',
+                team: 'home',
+                text: t('summary_fulltime', {
+                  home: prev.homeTeam.name,
+                  away: prev.awayTeam.name,
+                  homeScore: prev.homeScore,
+                  awayScore: prev.awayScore,
+                }),
+              });
+            }
+            return { ...prev, events: [...markers, ...mapped] };
+          });
+        })
+        .catch(() => {});
+    }
+
+    refetchEvents();
+    if (match.status !== 'live') return;
+    const interval = setInterval(refetchEvents, 60_000);
+    return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [match?.id]);
+  }, [match?.id, match?.status]);
 
   useEffect(() => {
     // Alinierile reale (nume, număr, poziție) pentru amicale — cerute o

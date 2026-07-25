@@ -6,7 +6,7 @@ import {
   fetchAllSeasonMatches,
   FOOTBALL_DATA_COMPETITION_IDS,
 } from '../api/footballdata';
-import { fetchFriendliesToday } from '../api/apifootball';
+import { fetchFriendliesToday, fetchLiveFriendlies } from '../api/apifootball';
 import type { Match } from '../types';
 
 const FOOTBALL_DATA_ID_TO_INTERNAL = Object.fromEntries(
@@ -119,6 +119,23 @@ export function MatchesProvider({ children }: { children: ReactNode }) {
           setMatches((prev) => {
             const byId = new Map(prev.map((m) => [m.id, m]));
             for (const m of remapped) byId.set(m.id, m);
+            const next = Array.from(byId.values());
+            saveCachedMatches(next);
+            return next;
+          });
+        })
+        .catch(() => {});
+
+      // Amicalele nu vin din football-data.org, deci nu sunt acoperite de
+      // cererea de mai sus — actualizăm separat, dar printr-o singură
+      // cerere ieftină (doar meciurile live chiar acum), ca minutul și
+      // scorul amicalelor în desfășurare să se actualizeze și ele.
+      fetchLiveFriendlies()
+        .then((liveFriendlies) => {
+          if (liveFriendlies.length === 0) return;
+          setMatches((prev) => {
+            const byId = new Map(prev.map((m) => [m.id, m]));
+            for (const m of liveFriendlies) byId.set(m.id, m);
             const next = Array.from(byId.values());
             saveCachedMatches(next);
             return next;
