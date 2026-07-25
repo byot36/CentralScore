@@ -1,4 +1,5 @@
 import { apiGet } from './client';
+import { translate } from '../context/LanguageContext';
 import type { Match } from '../types';
 
 // API-Football (api-sports.io) — folosit pentru evenimente live (gol,
@@ -45,40 +46,51 @@ export function mapFootballEventsToMatchEvents(
   return events.map((e) => {
     const isHome = e.team.id === homeTeamId;
     const minute = e.time.elapsed + (e.time.extra ?? 0);
+    const team = isHome ? ('home' as const) : ('away' as const);
     if (e.type === 'Goal') {
       return {
         minute,
         type: 'goal' as const,
-        team: isHome ? ('home' as const) : ('away' as const),
+        team,
         player: e.player.name,
         assist: e.assist.name ?? undefined,
-        text: e.assist.name ? `${e.player.name} (assist: ${e.assist.name})` : e.player.name,
+        text: e.assist.name
+          ? translate('event_goal_assist_text', { player: e.player.name, team: e.team.name, assist: e.assist.name })
+          : translate('event_goal_text', { player: e.player.name, team: e.team.name }),
       };
     }
     if (e.type === 'Card') {
+      const isRed = e.detail.toLowerCase().includes('red');
       return {
         minute,
-        type: e.detail.toLowerCase().includes('red') ? ('red' as const) : ('yellow' as const),
-        team: isHome ? ('home' as const) : ('away' as const),
+        type: isRed ? ('red' as const) : ('yellow' as const),
+        team,
         player: e.player.name,
-        text: e.player.name,
+        text: translate(isRed ? 'event_red_card_text' : 'event_yellow_card_text', {
+          player: e.player.name,
+          team: e.team.name,
+        }),
       };
     }
     if (e.type === 'subst') {
       return {
         minute,
         type: 'sub-in' as const,
-        team: isHome ? ('home' as const) : ('away' as const),
+        team,
         player: e.player.name,
         assist: e.assist.name ?? undefined,
-        text: `${e.assist.name ?? '—'} → ${e.player.name}`,
+        text: translate('event_sub_text', {
+          playerOut: e.assist.name ?? '—',
+          playerIn: e.player.name,
+          team: e.team.name,
+        }),
       };
     }
     return {
       minute,
       type: 'comment' as const,
-      team: isHome ? ('home' as const) : ('away' as const),
-      text: `${e.detail} — ${e.player.name}`,
+      team,
+      text: `${e.detail} — ${e.player.name} (${e.team.name})`,
     };
   });
 }
@@ -208,37 +220,52 @@ interface TransferPlayerResponse {
 // API-Football nu oferă un flux global "toate transferurile din lume" pe
 // planul gratuit — doar transferuri per echipă (/transfers?team=ID). Pentru
 // a arăta transferuri reale (nu inventate), cerem istoricul pentru un set
-// fix de cluburi mari din ligile deja urmărite în app, apoi păstrăm doar
-// transferurile din ultimele 30 de zile. Cererile sunt cache-uite 24h în
-// localStorage ca să nu consumăm bugetul zilnic limitat (100 cereri/zi).
+// mai larg de cluburi din ligile deja urmărite în app, apoi păstrăm doar
+// transferurile din ultimele 30 de zile. Cererile sunt cache-uite 48h în
+// localStorage ca să nu consumăm bugetul zilnic limitat (100 cereri/zi,
+// împărțit cu restul funcțiilor din app).
 const TRACKED_CLUB_IDS = [
-  33, 40, 42, 50, // Man United, Liverpool, Arsenal, Man City
-  541, 529, // Real Madrid, Barcelona
-  505, 489, // Inter, AC Milan
-  157, // Bayern Munich
-  85, // PSG
+  33, 40, 42, 50, 47, 49, 66, 34, 35, 48, // Premier League: Man Utd, Liverpool, Arsenal, Man City, Tottenham, Chelsea, Aston Villa, Newcastle, Bournemouth, West Ham
+  541, 529, 530, 532, 548, // La Liga: Real Madrid, Barcelona, Atletico, Valencia, Real Sociedad
+  505, 489, 496, 502, 499, // Serie A: Inter, AC Milan, Juventus, Fiorentina, Atalanta
+  157, 165, 168, 173, // Bundesliga: Bayern, Dortmund, Leverkusen, RB Leipzig
+  85, 91, 79, 80, // Ligue 1: PSG, Monaco, Lille, Marseille
 ];
 
 const TRANSFERS_CACHE_KEY = 'centralscore-transfers-cache';
 const TRANSFERS_CACHE_TTL_MS = 48 * 3600_000;
 
 export async function fetchRecentTransfers(): Promise<TransferEntry[]> {
+  let cachedEntries: TransferEntry[] | null = null;
   try {
     const cached = localStorage.getItem(TRANSFERS_CACHE_KEY);
     if (cached) {
       const parsed = JSON.parse(cached) as { fetchedAt: number; entries: TransferEntry[] };
       if (Date.now() - parsed.fetchedAt < TRANSFERS_CACHE_TTL_MS) return parsed.entries;
+      cachedEntries = parsed.entries;
     }
   } catch {
     // cache coruptă, ignorăm și cerem din nou
   }
 
   const cutoff = Date.now() - 30 * 24 * 3600_000;
+  let failures = 0;
   const results = await Promise.all(
     TRACKED_CLUB_IDS.map((id) =>
-      apiGet<{ response: TransferPlayerResponse[] }>(`/apifootball/transfers?team=${id}`).catch(() => ({ response: [] }))
+      apiGet<{ response: TransferPlayerResponse[] }>(`/apifootball/transfers?team=${id}`).catch(() => {
+        failures++;
+        return { response: [] };
+      })
     )
   );
+
+  // Dacă mai mult de jumătate din cereri au eșuat (rețea instabilă sau
+  // limita zilnică de cereri atinsă), rezultatul ar fi incomplet și
+  // inconsistent față de vizita anterioară — păstrăm lista veche din cache
+  // în loc s-o suprascriem cu una degradată.
+  if (failures > TRACKED_CLUB_IDS.length / 2 && cachedEntries) {
+    return cachedEntries;
+  }
 
   const entries: TransferEntry[] = [];
   for (const data of results) {

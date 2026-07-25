@@ -158,6 +158,11 @@ const ro: Dict = {
   event_goal: '⚽ GOL! {player} ({team})',
   event_red_card: '🟥 Cartonaș roșu: {player} ({team})',
   event_yellow_card: '🟨 Cartonaș galben: {player} ({team})',
+  event_goal_text: '{player} marchează pentru {team}',
+  event_goal_assist_text: '{player} marchează pentru {team} (pasă decisivă: {assist})',
+  event_yellow_card_text: 'Cartonaș galben pentru {player} ({team})',
+  event_red_card_text: 'Cartonaș roșu pentru {player} ({team})',
+  event_sub_text: '{playerOut} este înlocuit de {playerIn} ({team})',
   update_notification_body: 'Versiunea {version} este disponibilă. Apasă pentru a actualiza.',
 };
 
@@ -301,6 +306,11 @@ const en: Dict = {
   event_goal: '⚽ GOAL! {player} ({team})',
   event_red_card: '🟥 Red card: {player} ({team})',
   event_yellow_card: '🟨 Yellow card: {player} ({team})',
+  event_goal_text: '{player} scores for {team}',
+  event_goal_assist_text: '{player} scores for {team} (assist: {assist})',
+  event_yellow_card_text: 'Yellow card for {player} ({team})',
+  event_red_card_text: 'Red card for {player} ({team})',
+  event_sub_text: '{playerOut} is substituted by {playerIn} ({team})',
   update_notification_body: 'Version {version} is available. Tap to update.',
 };
 
@@ -444,6 +454,11 @@ const fr: Dict = {
   event_goal: '⚽ BUT ! {player} ({team})',
   event_red_card: '🟥 Carton rouge : {player} ({team})',
   event_yellow_card: '🟨 Carton jaune : {player} ({team})',
+  event_goal_text: '{player} marque pour {team}',
+  event_goal_assist_text: '{player} marque pour {team} (passe décisive : {assist})',
+  event_yellow_card_text: 'Carton jaune pour {player} ({team})',
+  event_red_card_text: 'Carton rouge pour {player} ({team})',
+  event_sub_text: '{playerOut} est remplacé par {playerIn} ({team})',
   update_notification_body: 'La version {version} est disponible. Appuyez pour mettre à jour.',
 };
 
@@ -587,6 +602,11 @@ const es: Dict = {
   event_goal: '⚽ ¡GOL! {player} ({team})',
   event_red_card: '🟥 Tarjeta roja: {player} ({team})',
   event_yellow_card: '🟨 Tarjeta amarilla: {player} ({team})',
+  event_goal_text: '{player} marca para {team}',
+  event_goal_assist_text: '{player} marca para {team} (asistencia: {assist})',
+  event_yellow_card_text: 'Tarjeta amarilla para {player} ({team})',
+  event_red_card_text: 'Tarjeta roja para {player} ({team})',
+  event_sub_text: '{playerOut} es sustituido por {playerIn} ({team})',
   update_notification_body: 'La versión {version} está disponible. Toca para actualizar.',
 };
 
@@ -730,6 +750,11 @@ const de: Dict = {
   event_goal: '⚽ TOR! {player} ({team})',
   event_red_card: '🟥 Rote Karte: {player} ({team})',
   event_yellow_card: '🟨 Gelbe Karte: {player} ({team})',
+  event_goal_text: '{player} trifft für {team}',
+  event_goal_assist_text: '{player} trifft für {team} (Vorlage: {assist})',
+  event_yellow_card_text: 'Gelbe Karte für {player} ({team})',
+  event_red_card_text: 'Rote Karte für {player} ({team})',
+  event_sub_text: '{playerOut} wird durch {playerIn} ersetzt ({team})',
   update_notification_body: 'Version {version} ist verfügbar. Zum Aktualisieren tippen.',
 };
 
