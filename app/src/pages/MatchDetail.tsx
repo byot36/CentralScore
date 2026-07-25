@@ -3,7 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { matches as mockMatches } from '../data/mock';
 import { isLiveApiConfigured } from '../api/client';
 import { fetchFootballDataMatchById } from '../api/footballdata';
-import { fetchFixtureEvents, mapFootballEventsToMatchEvents } from '../api/apifootball';
+import { fetchFixtureEvents, mapFootballEventsToMatchEvents, fetchFixtureLineups } from '../api/apifootball';
 import { useMatches } from '../context/MatchesContext';
 import { useLanguage } from '../context/LanguageContext';
 import type { Lineup, Match, Player, TeamStats } from '../types';
@@ -45,8 +45,47 @@ export default function MatchDetail() {
     if (!fixtureId || !homeTeamId) return;
     fetchFixtureEvents(fixtureId)
       .then((events) => {
-        if (events.length === 0) return;
-        setMatch((prev) => (prev ? { ...prev, events: mapFootballEventsToMatchEvents(events, homeTeamId) } : prev));
+        const mapped = mapFootballEventsToMatchEvents(events, homeTeamId);
+        setMatch((prev) => {
+          if (!prev) return prev;
+          // Marcaje reale de "început meci" / "fluier final", derivate din
+          // starea reală cunoscută a meciului (nu inventate) — fac
+          // rezumatul să pară un flux live chiar și la meciuri fără
+          // goluri/cartonașe.
+          const markers: Match['events'] = [];
+          if (prev.status === 'live' || prev.status === 'finished') {
+            markers.push({ minute: 0, type: 'comment', team: 'home', text: t('summary_kickoff') });
+          }
+          if (prev.status === 'finished') {
+            markers.push({
+              minute: 90,
+              type: 'comment',
+              team: 'home',
+              text: t('summary_fulltime', {
+                home: prev.homeTeam.name,
+                away: prev.awayTeam.name,
+                homeScore: prev.homeScore,
+                awayScore: prev.awayScore,
+              }),
+            });
+          }
+          return { ...prev, events: [...markers, ...mapped] };
+        });
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [match?.id]);
+
+  useEffect(() => {
+    // Alinierile reale (nume, număr, poziție) pentru amicale — cerute o
+    // singură dată la deschiderea meciului, doar dacă nu le avem deja.
+    if (!match || match.competitionId !== 'friendlies' || match.homeLineup.starting.length > 0) return;
+    const fixtureId = Number(match.id.replace('af-friendly-', ''));
+    if (!fixtureId) return;
+    fetchFixtureLineups(fixtureId)
+      .then((lineups) => {
+        if (!lineups) return;
+        setMatch((prev) => (prev ? { ...prev, homeLineup: lineups.home, awayLineup: lineups.away } : prev));
       })
       .catch(() => {});
     // eslint-disable-next-line react-hooks/exhaustive-deps

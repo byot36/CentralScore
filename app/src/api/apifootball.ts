@@ -1,6 +1,6 @@
 import { apiGet } from './client';
 import { translate } from '../context/LanguageContext';
-import type { Match } from '../types';
+import type { Match, Lineup, Player } from '../types';
 
 // API-Football (api-sports.io) — folosit pentru evenimente live (gol,
 // cartonaș galben/roșu) ale echipelor favorite și pentru meciurile amicale
@@ -34,6 +34,55 @@ export async function findLiveFixtureByTeams(homeTeamName: string, awayTeamName:
 export async function fetchFixtureEvents(fixtureId: number): Promise<FootballEvent[]> {
   const data = await apiGet<{ response: FootballEvent[] }>(`/apifootball/fixtures/events?fixture=${fixtureId}`);
   return data.response;
+}
+
+interface LineupResponse {
+  team: { id: number; name: string };
+  formation: string | null;
+  startXI: { player: { id: number; name: string; number: number | null; pos: string | null } }[];
+  substitutes: { player: { id: number; name: string; number: number | null; pos: string | null } }[];
+  coach: { id: number; name: string | null };
+}
+
+const UNKNOWN_PLAYER_STATS = { shots: 0, passes: 0, goals: 0, assists: 0, errors: 0 };
+
+// Alinierile reale (nume, număr, poziție) pentru meciurile amicale — nu
+// avem naționalitate/dată de naștere/valoare de piață din acest endpoint
+// (API-Football nu le include aici), deci le lăsăm goale în loc să
+// inventăm — PlayerRow din UI nu afișează oricum acele câmpuri la aliniere.
+function mapLineupPlayer(p: { id: number; name: string; number: number | null; pos: string | null }): Player {
+  return {
+    id: `af-player-${p.id}`,
+    name: p.name,
+    number: p.number ?? 0,
+    position: p.pos ?? '—',
+    nationality: '',
+    birthDate: '',
+    photo: '',
+    marketValue: '',
+    clubHistory: [],
+    stats: UNKNOWN_PLAYER_STATS,
+  };
+}
+
+export async function fetchFixtureLineups(fixtureId: number): Promise<{ home: Lineup; away: Lineup } | null> {
+  const data = await apiGet<{ response: LineupResponse[] }>(`/apifootball/fixtures/lineups?fixture=${fixtureId}`);
+  if (data.response.length < 2) return null;
+  const [home, away] = data.response;
+  const toLineup = (l: LineupResponse): Lineup => ({
+    formation: l.formation ?? '—',
+    starting: l.startXI.map((s) => mapLineupPlayer(s.player)),
+    bench: l.substitutes.map((s) => mapLineupPlayer(s.player)),
+    coach: {
+      id: `af-coach-${l.coach.id}`,
+      name: l.coach.name ?? 'Necunoscut',
+      birthDate: '',
+      formerClubs: [],
+      playedAsFootballer: false,
+    },
+    unavailable: [],
+  });
+  return { home: toLineup(home), away: toLineup(away) };
 }
 
 // Convertește evenimentele reale API-Football (gol/cartonaș/schimbare) în
