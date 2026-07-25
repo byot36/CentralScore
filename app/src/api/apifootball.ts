@@ -35,6 +35,54 @@ export async function fetchFixtureEvents(fixtureId: number): Promise<FootballEve
   return data.response;
 }
 
+// Convertește evenimentele reale API-Football (gol/cartonaș/schimbare) în
+// formatul folosit de tab-ul "Rezumat" al aplicației — pentru meciurile
+// amicale, care nu au evenimente incluse deja (spre deosebire de football-data.org).
+export function mapFootballEventsToMatchEvents(
+  events: FootballEvent[],
+  homeTeamId: number
+): Match['events'] {
+  return events.map((e) => {
+    const isHome = e.team.id === homeTeamId;
+    const minute = e.time.elapsed + (e.time.extra ?? 0);
+    if (e.type === 'Goal') {
+      return {
+        minute,
+        type: 'goal' as const,
+        team: isHome ? ('home' as const) : ('away' as const),
+        player: e.player.name,
+        assist: e.assist.name ?? undefined,
+        text: e.assist.name ? `${e.player.name} (assist: ${e.assist.name})` : e.player.name,
+      };
+    }
+    if (e.type === 'Card') {
+      return {
+        minute,
+        type: e.detail.toLowerCase().includes('red') ? ('red' as const) : ('yellow' as const),
+        team: isHome ? ('home' as const) : ('away' as const),
+        player: e.player.name,
+        text: e.player.name,
+      };
+    }
+    if (e.type === 'subst') {
+      return {
+        minute,
+        type: 'sub-in' as const,
+        team: isHome ? ('home' as const) : ('away' as const),
+        player: e.player.name,
+        assist: e.assist.name ?? undefined,
+        text: `${e.assist.name ?? '—'} → ${e.player.name}`,
+      };
+    }
+    return {
+      minute,
+      type: 'comment' as const,
+      team: isHome ? ('home' as const) : ('away' as const),
+      text: `${e.detail} — ${e.player.name}`,
+    };
+  });
+}
+
 interface FriendlyFixture {
   fixture: {
     id: number;

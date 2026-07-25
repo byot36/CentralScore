@@ -3,6 +3,7 @@ import { useParams, Link } from 'react-router-dom';
 import { matches as mockMatches } from '../data/mock';
 import { isLiveApiConfigured } from '../api/client';
 import { fetchFootballDataMatchById } from '../api/footballdata';
+import { fetchFixtureEvents, mapFootballEventsToMatchEvents } from '../api/apifootball';
 import { useMatches } from '../context/MatchesContext';
 import { useLanguage } from '../context/LanguageContext';
 import type { Lineup, Match, Player, TeamStats } from '../types';
@@ -33,6 +34,23 @@ export default function MatchDetail() {
   useEffect(() => {
     if (knownMatch) setMatch(knownMatch);
   }, [knownMatch]);
+
+  useEffect(() => {
+    // Amicalele nu vin cu evenimente (goluri/cartonașe) incluse, spre
+    // deosebire de meciurile din ligile de pe football-data.org — le cerem
+    // separat, o singură dată, la deschiderea paginii meciului.
+    if (!match || match.competitionId !== 'friendlies' || match.events.length > 0) return;
+    const fixtureId = Number(match.id.replace('af-friendly-', ''));
+    const homeTeamId = Number(match.homeTeam.id.replace('af-team-', ''));
+    if (!fixtureId || !homeTeamId) return;
+    fetchFixtureEvents(fixtureId)
+      .then((events) => {
+        if (events.length === 0) return;
+        setMatch((prev) => (prev ? { ...prev, events: mapFootballEventsToMatchEvents(events, homeTeamId) } : prev));
+      })
+      .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [match?.id]);
 
   if (!match) {
     return (

@@ -69,11 +69,16 @@ export function MatchesProvider({ children }: { children: ReactNode }) {
     })
       .then(() => {
         if (accumulated.length === 0) return;
-        const byId = new Map((cached ?? []).map((m) => [m.id, m]));
-        for (const m of accumulated) byId.set(m.id, m);
-        const merged = Array.from(byId.values());
-        setMatches(merged);
-        saveCachedMatches(merged);
+        // Folosim starea curentă (nu snapshot-ul din cache de la montare) ca
+        // bază — altfel am rescrie peste amicalele/actualizările deja
+        // adăugate între timp de celelalte cereri, făcându-le să "dispară".
+        setMatches((prev) => {
+          const byId = new Map(prev.map((m) => [m.id, m]));
+          for (const m of accumulated) byId.set(m.id, m);
+          const merged = Array.from(byId.values());
+          saveCachedMatches(merged);
+          return merged;
+        });
       })
       .catch((err) => {
         if (!cached) setError(err.message);
