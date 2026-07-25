@@ -126,19 +126,28 @@ function mapFriendly(f: FriendlyFixture): Match {
 }
 
 // Meciuri amicale — nu sunt disponibile pe football-data.org (planul
-// gratuit), doar prin API-Football. Amicalele (naționale sau de club) sunt
-// împărțite pe multe ligi diferite ("World - Friendlies", "Club Friendlies"
-// etc.) — în loc să ghicim fiecare id de ligă și să ratăm unele (ex.
-// amicalele de club nu apăreau), cerem *toate* meciurile din ziua curentă
-// (un singur apel) și filtrăm client-side orice ligă al cărei nume conține
-// "Friendlies" — prinde orice tip de amical, real, indiferent de ligă.
-// O singură dată la deschiderea aplicației (nu periodic), ca să nu
-// consumăm bugetul zilnic.
+// gratuit), doar prin API-Football. Amicalele sunt împărțite pe mai multe
+// ligi: 5 = "World - Friendlies" (naționale), 667 = "Club Friendlies".
+// Am încercat și varianta "cere toate meciurile din lume de azi, fără
+// filtru de ligă" — dar răspunsul e uriaș (mii de meciuri din toate
+// competițiile) și poate depăși timeout-ul sau limita de payload, făcând
+// amicalele să dispară complet din listă. Cerem deci explicit doar aceste
+// două ligi cunoscute — mai rapid și mai fiabil, chiar dacă teoretic ar
+// putea rata un amical dintr-o ligă foarte obscură.
 export async function fetchFriendliesToday(): Promise<Match[]> {
   const today = new Date().toISOString().slice(0, 10);
-  const data = await apiGet<{ response: FriendlyFixture[] }>(`/apifootball/fixtures?date=${today}`);
-  const friendlies = data.response.filter((f) => f.league.name.toLowerCase().includes('friendlies'));
-  return friendlies.map(mapFriendly);
+  const season = new Date().getFullYear();
+  const [international, club] = await Promise.all([
+    apiGet<{ response: FriendlyFixture[] }>(`/apifootball/fixtures?league=5&season=${season}&date=${today}`),
+    apiGet<{ response: FriendlyFixture[] }>(`/apifootball/fixtures?league=667&season=${season}&date=${today}`),
+  ]);
+  const seen = new Set<number>();
+  const combined = [...international.response, ...club.response].filter((f) => {
+    if (seen.has(f.fixture.id)) return false;
+    seen.add(f.fixture.id);
+    return true;
+  });
+  return combined.map(mapFriendly);
 }
 
 export interface TransferEntry {
