@@ -76,6 +76,68 @@ function delay(ms: number) {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
+export interface StandingRow {
+  position: number;
+  team: { id: string; name: string; logo: string };
+  playedGames: number;
+  won: number;
+  draw: number;
+  lost: number;
+  points: number;
+  goalsFor: number;
+  goalsAgainst: number;
+  goalDifference: number;
+}
+
+export interface StandingGroup {
+  group: string | null;
+  rows: StandingRow[];
+}
+
+interface FDStandingsResponse {
+  standings: Array<{
+    type: string;
+    group: string | null;
+    table: Array<{
+      position: number;
+      team: { id: number; name: string; crest?: string };
+      playedGames: number;
+      won: number;
+      draw: number;
+      lost: number;
+      points: number;
+      goalsFor: number;
+      goalsAgainst: number;
+      goalDifference: number;
+    }>;
+  }>;
+}
+
+// Clasamentul unei ligi — doar competițiile de tip "ligă" (nu turnee cu
+// grupe eliminate rapid) au un clasament stabil pe tot sezonul.
+export async function fetchStandings(competitionId: string): Promise<StandingGroup[]> {
+  const numericId = FOOTBALL_DATA_COMPETITION_IDS[competitionId];
+  if (!numericId) return [];
+  const data = await apiGet<FDStandingsResponse>(`/footballdata/competitions/${numericId}/standings`);
+  return data.standings
+    .filter((s) => s.type === 'TOTAL')
+    .map((s) => ({
+      group: s.group,
+      rows: s.table.map((r) => ({
+        position: r.position,
+        team: { id: `fd-team-${r.team.id}`, name: r.team.name, logo: r.team.crest ?? '⚪' },
+        playedGames: r.playedGames,
+        won: r.won,
+        draw: r.draw,
+        lost: r.lost,
+        points: r.points,
+        goalsFor: r.goalsFor,
+        goalsAgainst: r.goalsAgainst,
+        goalDifference: r.goalDifference,
+      })),
+    }));
+}
+
 // Când nu sunt meciuri azi (pauză de sezon etc.), arătăm în schimb următoarele
 // meciuri programate din fiecare competiție, ca ecranul să nu rămână gol.
 // /v4/matches limitează intervalul dateFrom/dateTo la 10 zile, deci interogăm
