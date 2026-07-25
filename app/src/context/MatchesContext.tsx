@@ -13,6 +13,7 @@ const FOOTBALL_DATA_ID_TO_INTERNAL = Object.fromEntries(
   Object.entries(FOOTBALL_DATA_COMPETITION_IDS).map(([k, v]) => [String(v), k])
 );
 const REFRESH_MS = 90_000;
+const BACKGROUND_REFRESH_THRESHOLD_MS = 5 * 60_000;
 const CACHE_KEY = 'centralscore-matches-cache';
 
 function remapCompetition(m: Match): Match {
@@ -113,7 +114,27 @@ export function MatchesProvider({ children }: { children: ReactNode }) {
     }
 
     const interval = setInterval(refreshToday, REFRESH_MS);
-    return () => clearInterval(interval);
+
+    // Dacă utilizatorul a stat cu aplicația în fundal (ecran stins, altă
+    // aplicație activă) peste 5 minute, facem refresh imediat la revenire —
+    // altfel ar aștepta până la 90s pentru următoarea actualizare automată.
+    let hiddenAt: number | null = null;
+    function handleVisibilityChange() {
+      if (document.hidden) {
+        hiddenAt = Date.now();
+        return;
+      }
+      if (hiddenAt !== null && Date.now() - hiddenAt >= BACKGROUND_REFRESH_THRESHOLD_MS) {
+        refreshToday();
+      }
+      hiddenAt = null;
+    }
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+
+    return () => {
+      clearInterval(interval);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
