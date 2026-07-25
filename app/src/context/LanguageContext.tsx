@@ -10,7 +10,7 @@ function detectDefaultLang(): Lang {
   } catch {
     // ignore
   }
-  return 'ro';
+  return 'en';
 }
 
 interface LanguageContextValue {

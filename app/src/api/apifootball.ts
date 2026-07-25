@@ -91,6 +91,7 @@ export async function fetchFriendliesToday(): Promise<Match[]> {
 
 export interface TransferEntry {
   id: string;
+  playerId: number;
   playerName: string;
   date: string;
   type: string | null;
@@ -155,6 +156,7 @@ export async function fetchRecentTransfers(): Promise<TransferEntry[]> {
       if (isNaN(ts) || ts < cutoff) continue;
       entries.push({
         id: `${p.player.id}-${latest.date}`,
+        playerId: p.player.id,
         playerName: p.player.name,
         date: latest.date,
         type: latest.type,
@@ -172,4 +174,55 @@ export async function fetchRecentTransfers(): Promise<TransferEntry[]> {
   }
 
   return entries;
+}
+
+export interface PlayerStats {
+  name: string;
+  photo: string;
+  age: number | null;
+  nationality: string | null;
+  position: string | null;
+  team: string | null;
+  appearances: number;
+  goals: number;
+  assists: number;
+  yellowCards: number;
+  redCards: number;
+  rating: string | null;
+}
+
+interface PlayerStatsResponse {
+  player: { name: string; photo: string; age: number | null; nationality: string | null };
+  statistics: {
+    team: { name: string };
+    games: { position: string | null; appearences: number | null; rating: string | null };
+    goals: { total: number | null; assists: number | null };
+    cards: { yellow: number | null; red: number | null };
+  }[];
+}
+
+// Statistici reale de jucător (sezonul curent), cerute doar la click pe un
+// transfer — nu la încărcarea listei — ca să nu consumăm inutil bugetul.
+export async function fetchPlayerStats(playerId: number): Promise<PlayerStats | null> {
+  const season = new Date().getFullYear();
+  const data = await apiGet<{ response: PlayerStatsResponse[] }>(
+    `/apifootball/players?id=${playerId}&season=${season}`
+  );
+  const entry = data.response[0];
+  if (!entry) return null;
+  const stat = entry.statistics[0];
+  return {
+    name: entry.player.name,
+    photo: entry.player.photo,
+    age: entry.player.age,
+    nationality: entry.player.nationality,
+    position: stat?.games.position ?? null,
+    team: stat?.team.name ?? null,
+    appearances: stat?.games.appearences ?? 0,
+    goals: stat?.goals.total ?? 0,
+    assists: stat?.goals.assists ?? 0,
+    yellowCards: stat?.cards.yellow ?? 0,
+    redCards: stat?.cards.red ?? 0,
+    rating: stat?.games.rating ?? null,
+  };
 }
