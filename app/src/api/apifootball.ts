@@ -319,10 +319,24 @@ export async function fetchRecentTransfers(): Promise<TransferEntry[]> {
   let failures = 0;
   const results = await Promise.all(
     TRACKED_CLUB_IDS.map((id) =>
-      apiGet<{ response: TransferPlayerResponse[] }>(`/apifootball/transfers?team=${id}`).catch(() => {
-        failures++;
-        return { response: [] };
-      })
+      apiGet<{ response: TransferPlayerResponse[]; errors: unknown }>(`/apifootball/transfers?team=${id}`)
+        .then((data) => {
+          // API-Football poate răspunde cu HTTP 200 și "response": [] chiar
+          // și când e o eroare reală (ex. limită de cereri atinsă) — eroarea
+          // vine ascunsă în câmpul "errors", nu ca status HTTP. Fără
+          // verificarea asta, tratam eronat "limită atinsă" ca "0 transferuri
+          // reale" pentru fiecare club, în loc să recunoaștem eșecul.
+          const hasApiError = data.errors && (Array.isArray(data.errors) ? data.errors.length : Object.keys(data.errors).length);
+          if (hasApiError) {
+            failures++;
+            return { response: [] };
+          }
+          return data;
+        })
+        .catch(() => {
+          failures++;
+          return { response: [] };
+        })
     )
   );
 
@@ -333,6 +347,9 @@ export async function fetchRecentTransfers(): Promise<TransferEntry[]> {
   // care altfel ar rămâne "înghețat" așa până expiră (48h).
   if (failures === TRACKED_CLUB_IDS.length && cachedEntries) {
     return cachedEntries;
+  }
+  if (failures === TRACKED_CLUB_IDS.length) {
+    throw new Error('Limita zilnică de cereri API a fost atinsă — încearcă din nou mai târziu.');
   }
 
   const entries: TransferEntry[] = [];
