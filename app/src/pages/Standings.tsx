@@ -40,42 +40,53 @@ export default function Standings() {
       {groups?.map((g, i) => (
         <div key={i} className="mb-6">
           {g.group && <h2 className="text-sm font-semibold text-gray-300 mb-2">{g.group}</h2>}
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto rounded-xl border border-white/10 bg-[#111827]">
             <table className="w-full text-sm border-collapse">
               <thead>
-                <tr className="text-gray-400 text-xs">
-                  <th className="text-left py-2 pr-2 w-6">#</th>
-                  <th className="text-left py-2 pr-2">{t('standings_team')}</th>
-                  <th className="text-center py-2 px-1">{t('standings_played')}</th>
-                  <th className="text-center py-2 px-1">{t('standings_won')}</th>
-                  <th className="text-center py-2 px-1">{t('standings_draw')}</th>
-                  <th className="text-center py-2 px-1">{t('standings_lost')}</th>
-                  <th className="text-center py-2 px-1">{t('standings_gd')}</th>
-                  <th className="text-center py-2 pl-1 font-semibold">{t('standings_points')}</th>
+                <tr className="text-gray-400 text-xs bg-white/5">
+                  <th className="text-left py-2.5 pl-4 pr-2 w-6">#</th>
+                  <th className="text-left py-2.5 pr-2">{t('standings_team')}</th>
+                  <th className="text-center py-2.5 px-1">{t('standings_played')}</th>
+                  <th className="text-center py-2.5 px-1">{t('standings_won')}</th>
+                  <th className="text-center py-2.5 px-1">{t('standings_draw')}</th>
+                  <th className="text-center py-2.5 px-1">{t('standings_lost')}</th>
+                  <th className="text-center py-2.5 px-1">{t('standings_gd')}</th>
+                  <th className="text-center py-2.5 pr-4 pl-1 font-semibold">{t('standings_points')}</th>
                 </tr>
               </thead>
               <tbody>
-                {g.rows.map((r) => (
-                  <tr key={r.team.id} className="border-t border-white/10">
-                    <td className="py-2 pr-2 text-gray-400">{r.position}</td>
-                    <td className="py-2 pr-2">
-                      <div className="flex items-center gap-2 min-w-0">
-                        {r.team.logo.startsWith('http') ? (
-                          <img src={r.team.logo} alt={r.team.name} className="w-5 h-5 object-contain shrink-0" />
-                        ) : (
-                          <span className="shrink-0">{r.team.logo}</span>
-                        )}
-                        <span className="truncate">{r.team.name}</span>
-                      </div>
-                    </td>
-                    <td className="text-center py-2 px-1 text-gray-300">{r.playedGames}</td>
-                    <td className="text-center py-2 px-1 text-gray-300">{r.won}</td>
-                    <td className="text-center py-2 px-1 text-gray-300">{r.draw}</td>
-                    <td className="text-center py-2 px-1 text-gray-300">{r.lost}</td>
-                    <td className="text-center py-2 px-1 text-gray-300">{r.goalDifference}</td>
-                    <td className="text-center py-2 pl-1 font-semibold">{r.points}</td>
-                  </tr>
-                ))}
+                {g.rows.map((r, idx) => {
+                  const isTop = r.position <= 4;
+                  const isRelegation = r.position > g.rows.length - 3;
+                  return (
+                    <tr
+                      key={r.team.id}
+                      className={`border-t border-white/5 hover:bg-white/5 transition-colors relative ${
+                        idx % 2 === 1 ? 'bg-white/[0.02]' : ''
+                      }`}
+                    >
+                      <td className={`py-2.5 pl-4 pr-2 text-gray-400 relative ${isTop ? 'before:absolute before:left-0 before:top-0 before:bottom-0 before:w-0.5 before:bg-[#00c853]' : isRelegation ? 'before:absolute before:left-0 before:top-0 before:bottom-0 before:w-0.5 before:bg-red-500/60' : ''}`}>
+                        {r.position}
+                      </td>
+                      <td className="py-2.5 pr-2">
+                        <div className="flex items-center gap-2 min-w-0">
+                          {r.team.logo.startsWith('http') ? (
+                            <img src={r.team.logo} alt={r.team.name} className="w-5 h-5 object-contain shrink-0" />
+                          ) : (
+                            <span className="shrink-0">{r.team.logo}</span>
+                          )}
+                          <span className="truncate">{r.team.name}</span>
+                        </div>
+                      </td>
+                      <td className="text-center py-2.5 px-1 text-gray-300">{r.playedGames}</td>
+                      <td className="text-center py-2.5 px-1 text-gray-300">{r.won}</td>
+                      <td className="text-center py-2.5 px-1 text-gray-300">{r.draw}</td>
+                      <td className="text-center py-2.5 px-1 text-gray-300">{r.lost}</td>
+                      <td className="text-center py-2.5 px-1 text-gray-300">{r.goalDifference}</td>
+                      <td className="text-center py-2.5 pr-4 pl-1 font-semibold">{r.points}</td>
+                    </tr>
+                  );
+                })}
               </tbody>
             </table>
           </div>

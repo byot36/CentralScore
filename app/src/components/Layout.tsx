@@ -61,7 +61,7 @@ export default function Layout() {
 
   return (
     <div className="min-h-screen flex flex-col bg-[#0f172a] text-white">
-      <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0f172a]/95 backdrop-blur">
+      <header className="sticky top-0 z-20 border-b border-white/10 bg-[#0f172a]/95 backdrop-blur shadow-lg shadow-black/20">
         <div className="max-w-5xl mx-auto flex items-center justify-between px-4 py-3">
           <div className="flex items-center gap-3">
             <button

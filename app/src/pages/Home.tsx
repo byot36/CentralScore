@@ -67,24 +67,30 @@ export default function Home() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-xl font-bold mb-3">{t('home_title')}</h1>
-        <input
-          type="text"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-          placeholder={t('search_placeholder')}
-          className="w-full mb-3 bg-[#111827] border border-white/10 rounded-lg px-3 py-2 text-sm placeholder:text-gray-500 focus:outline-none focus:border-[#00c853]/50"
-        />
+        <h1 className="text-2xl font-bold mb-4 tracking-tight">{t('home_title')}</h1>
+        <div className="relative mb-4">
+          <svg className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <circle cx="11" cy="11" r="7" />
+            <line x1="21" y1="21" x2="16.65" y2="16.65" />
+          </svg>
+          <input
+            type="text"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder={t('search_placeholder')}
+            className="w-full bg-[#111827] border border-white/10 rounded-xl pl-9 pr-3 py-2.5 text-sm placeholder:text-gray-500 focus:outline-none focus:border-[#00c853]/50 focus:ring-2 focus:ring-[#00c853]/10 transition-shadow"
+          />
+        </div>
         {!searchResults && (
           <div className="flex gap-2 overflow-x-auto pb-2">
             {groups.map(({ comp }) => (
               <button
                 key={comp.id}
                 onClick={() => setSelectedLeague(comp.id === effectiveSelection ? null : comp.id)}
-                className={`shrink-0 flex items-center gap-2 border rounded-full px-3 py-1.5 text-sm transition-colors ${
+                className={`shrink-0 flex items-center gap-2 border rounded-full px-3.5 py-1.5 text-sm font-medium transition-all duration-200 ${
                   comp.id === effectiveSelection
-                    ? 'bg-[#00c853]/10 border-[#00c853] text-white'
-                    : 'bg-[#111827] border-white/10 hover:border-[#00c853]/50'
+                    ? 'bg-[#00c853] border-[#00c853] text-black shadow-sm shadow-[#00c853]/30'
+                    : 'bg-[#111827] border-white/10 text-gray-300 hover:border-[#00c853]/50 hover:text-white'
                 }`}
               >
                 <span>{comp.logo}</span>
