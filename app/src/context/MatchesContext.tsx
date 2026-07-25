@@ -141,7 +141,7 @@ export function MatchesProvider({ children }: { children: ReactNode }) {
             return next;
           });
         })
-        .catch(() => {});
+        .catch((err) => console.error('Nu am putut actualiza live amicalele:', err));
     }
 
     const interval = setInterval(refreshToday, REFRESH_MS);

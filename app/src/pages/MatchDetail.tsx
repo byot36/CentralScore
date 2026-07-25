@@ -20,6 +20,7 @@ export default function MatchDetail() {
   const [match, setMatch] = useState<Match | undefined>(mockMatch ?? knownMatch);
   const [tab, setTab] = useState<Tab>('summary');
   const [error, setError] = useState<string | null>(null);
+  const [debugError, setDebugError] = useState<string | null>(null);
 
   useEffect(() => {
     // Meciul e deja în lista principală (încărcată o singură dată la pornire)
@@ -91,7 +92,10 @@ export default function MatchDetail() {
             return { ...prev, events: [...markers, ...mapped] };
           });
         })
-        .catch((err) => console.error('Nu am putut încărca evenimentele meciului:', err));
+        .catch((err) => {
+          console.error('Nu am putut încărca evenimentele meciului:', err);
+          setDebugError(`evenimente: ${err.message}`);
+        });
     }
 
     refetchEvents();
@@ -112,7 +116,10 @@ export default function MatchDetail() {
         if (!lineups) return;
         setMatch((prev) => (prev ? { ...prev, homeLineup: lineups.home, awayLineup: lineups.away } : prev));
       })
-      .catch((err) => console.error('Nu am putut încărca aliniațiile meciului:', err));
+      .catch((err) => {
+        console.error('Nu am putut încărca aliniațiile meciului:', err);
+        setDebugError((prev) => prev ?? `aliniații: ${err.message}`);
+      });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [match?.id]);
 
@@ -135,6 +142,12 @@ export default function MatchDetail() {
   return (
     <div>
       <Link to="/" className="text-sm text-gray-400 hover:text-white">{t('match_back')}</Link>
+
+      {debugError && (
+        <p className="mt-2 text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2">
+          Eroare API ({debugError})
+        </p>
+      )}
 
       <div className="mt-3 bg-[#111827] border border-white/10 rounded-lg p-5 text-center">
         <div className="text-xs text-gray-400 mb-2">
