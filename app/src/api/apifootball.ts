@@ -88,3 +88,88 @@ export async function fetchFriendliesToday(): Promise<Match[]> {
   );
   return data.response.map(mapFriendly);
 }
+
+export interface TransferEntry {
+  id: string;
+  playerName: string;
+  date: string;
+  type: string | null;
+  teamOut: { id: number; name: string; logo: string };
+  teamIn: { id: number; name: string; logo: string };
+}
+
+interface TransferPlayerResponse {
+  player: { id: number; name: string };
+  update: string;
+  transfers: {
+    date: string;
+    type: string | null;
+    teams: {
+      in: { id: number; name: string; logo: string };
+      out: { id: number; name: string; logo: string };
+    };
+  }[];
+}
+
+// API-Football nu oferă un flux global "toate transferurile din lume" pe
+// planul gratuit — doar transferuri per echipă (/transfers?team=ID). Pentru
+// a arăta transferuri reale (nu inventate), cerem istoricul pentru un set
+// fix de cluburi mari din ligile deja urmărite în app, apoi păstrăm doar
+// transferurile din ultimele 30 de zile. Cererile sunt cache-uite 24h în
+// localStorage ca să nu consumăm bugetul zilnic limitat (100 cereri/zi).
+const TRACKED_CLUB_IDS = [
+  33, 40, 42, 49, 50, 47, // Man United, Liverpool, Arsenal, Chelsea, Man City, Tottenham
+  541, 529, 530, 548, // Real Madrid, Barcelona, Atletico Madrid, Real Sociedad
+  505, 496, 489, // Inter, Juventus, AC Milan
+  157, 165, // Bayern Munich, Borussia Dortmund
+  85, 91, // PSG, Monaco
+];
+
+const TRANSFERS_CACHE_KEY = 'centralscore-transfers-cache';
+const TRANSFERS_CACHE_TTL_MS = 24 * 3600_000;
+
+export async function fetchRecentTransfers(): Promise<TransferEntry[]> {
+  try {
+    const cached = localStorage.getItem(TRANSFERS_CACHE_KEY);
+    if (cached) {
+      const parsed = JSON.parse(cached) as { fetchedAt: number; entries: TransferEntry[] };
+      if (Date.now() - parsed.fetchedAt < TRANSFERS_CACHE_TTL_MS) return parsed.entries;
+    }
+  } catch {
+    // cache coruptă, ignorăm și cerem din nou
+  }
+
+  const cutoff = Date.now() - 30 * 24 * 3600_000;
+  const results = await Promise.all(
+    TRACKED_CLUB_IDS.map((id) =>
+      apiGet<{ response: TransferPlayerResponse[] }>(`/apifootball/transfers?team=${id}`).catch(() => ({ response: [] }))
+    )
+  );
+
+  const entries: TransferEntry[] = [];
+  for (const data of results) {
+    for (const p of data.response) {
+      const latest = p.transfers[0];
+      if (!latest) continue;
+      const ts = new Date(latest.date).getTime();
+      if (isNaN(ts) || ts < cutoff) continue;
+      entries.push({
+        id: `${p.player.id}-${latest.date}`,
+        playerName: p.player.name,
+        date: latest.date,
+        type: latest.type,
+        teamOut: latest.teams.out,
+        teamIn: latest.teams.in,
+      });
+    }
+  }
+  entries.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+  try {
+    localStorage.setItem(TRANSFERS_CACHE_KEY, JSON.stringify({ fetchedAt: Date.now(), entries }));
+  } catch {
+    // localStorage plin — nu blocăm afișarea datelor
+  }
+
+  return entries;
+}

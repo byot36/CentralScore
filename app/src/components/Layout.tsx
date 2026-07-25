@@ -24,6 +24,7 @@ export default function Layout() {
 
   const NAV_LINKS = [
     { to: '/', label: t('nav_matches') },
+    { to: '/transfers', label: t('nav_transfers') },
     { to: '/favorites', label: t('nav_favorites') },
     { to: '/settings', label: t('nav_settings') },
   ];
@@ -99,7 +100,20 @@ export default function Layout() {
               </svg>
             </button>
             <Link to="/" className="flex items-center gap-2 font-extrabold text-lg tracking-tight">
-              <span className="inline-block w-2.5 h-2.5 rounded-full bg-[#00c853]" />
+              <svg width="20" height="20" viewBox="0 0 32 32" className="shrink-0">
+                <circle cx="16" cy="16" r="15" fill="#fff" stroke="#00c853" strokeWidth="1.5" />
+                <path
+                  fill="#0f172a"
+                  d="M16 10.2l4.2 3.05-1.6 4.95h-5.2l-1.6-4.95L16 10.2z"
+                />
+                <path
+                  fill="none"
+                  stroke="#0f172a"
+                  strokeWidth="1.1"
+                  strokeLinecap="round"
+                  d="M16 4.5v5.7M16 18.2l1.6 4.95M16 18.2l-1.6 4.95M20.2 13.25l5.3-1.3M6.5 11.95l5.3 1.3M9.6 23.5l2.6-4.85M22.4 23.5l-2.6-4.85M4.5 16h4M27.5 16h-4"
+                />
+              </svg>
               Central<span className="text-[#00c853]">Score</span>
             </Link>
           </div>
