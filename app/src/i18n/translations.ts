@@ -55,6 +55,7 @@ const ro: Dict = {
   summary_fulltime: 'Fluier final: {home} {homeScore} - {awayScore} {away}',
   lineups_unofficial: 'Aliniațiile oficiale nu au fost anunțate încă. Antrenori: {home} vs {away}.',
   lineups_unavailable: 'Aliniații, poziții pe teren și jucători individuali nu sunt disponibile pe planul gratuit al sursei de date folosite.',
+  lineups_not_published: 'Aliniațiile nu au fost încă publicate de sursa de date pentru acest meci amical.',
   lineups_coach: 'Antrenor',
   lineups_born: 'n.',
   lineups_former_player: 'Fost jucător la',
@@ -165,6 +166,7 @@ const ro: Dict = {
   event_yellow_card_text: 'Cartonaș galben pentru {player} ({team})',
   event_red_card_text: 'Cartonaș roșu pentru {player} ({team})',
   event_sub_text: '{playerOut} este înlocuit de {playerIn} ({team})',
+  event_unknown_player: 'un jucător',
   update_notification_body: 'Versiunea {version} este disponibilă. Apasă pentru a actualiza.',
 };
 
@@ -205,6 +207,7 @@ const en: Dict = {
   summary_fulltime: 'Full-time: {home} {homeScore} - {awayScore} {away}',
   lineups_unofficial: 'Official lineups have not been announced yet. Coaches: {home} vs {away}.',
   lineups_unavailable: 'Lineups, positions and individual players are not available on the free plan of the data source used.',
+  lineups_not_published: 'Lineups have not been published yet by the data source for this friendly match.',
   lineups_coach: 'Coach',
   lineups_born: 'b.',
   lineups_former_player: 'Former player at',
@@ -315,6 +318,7 @@ const en: Dict = {
   event_yellow_card_text: 'Yellow card for {player} ({team})',
   event_red_card_text: 'Red card for {player} ({team})',
   event_sub_text: '{playerOut} is substituted by {playerIn} ({team})',
+  event_unknown_player: 'a player',
   update_notification_body: 'Version {version} is available. Tap to update.',
 };
 
@@ -355,6 +359,7 @@ const fr: Dict = {
   summary_fulltime: 'Coup de sifflet final : {home} {homeScore} - {awayScore} {away}',
   lineups_unofficial: 'Les compositions officielles n\'ont pas encore été annoncées. Entraîneurs : {home} vs {away}.',
   lineups_unavailable: 'Les compositions, positions et joueurs individuels ne sont pas disponibles sur le plan gratuit de la source de données utilisée.',
+  lineups_not_published: 'Les compositions n\'ont pas encore été publiées par la source de données pour ce match amical.',
   lineups_coach: 'Entraîneur',
   lineups_born: 'né le',
   lineups_former_player: 'Ancien joueur à',
@@ -465,6 +470,7 @@ const fr: Dict = {
   event_yellow_card_text: 'Carton jaune pour {player} ({team})',
   event_red_card_text: 'Carton rouge pour {player} ({team})',
   event_sub_text: '{playerOut} est remplacé par {playerIn} ({team})',
+  event_unknown_player: 'un joueur',
   update_notification_body: 'La version {version} est disponible. Appuyez pour mettre à jour.',
 };
 
@@ -505,6 +511,7 @@ const es: Dict = {
   summary_fulltime: 'Pitido final: {home} {homeScore} - {awayScore} {away}',
   lineups_unofficial: 'Las alineaciones oficiales aún no se han anunciado. Entrenadores: {home} vs {away}.',
   lineups_unavailable: 'Las alineaciones, posiciones y jugadores individuales no están disponibles en el plan gratuito de la fuente de datos usada.',
+  lineups_not_published: 'Las alineaciones aún no han sido publicadas por la fuente de datos para este partido amistoso.',
   lineups_coach: 'Entrenador',
   lineups_born: 'n.',
   lineups_former_player: 'Ex jugador de',
@@ -615,6 +622,7 @@ const es: Dict = {
   event_yellow_card_text: 'Tarjeta amarilla para {player} ({team})',
   event_red_card_text: 'Tarjeta roja para {player} ({team})',
   event_sub_text: '{playerOut} es sustituido por {playerIn} ({team})',
+  event_unknown_player: 'un jugador',
   update_notification_body: 'La versión {version} está disponible. Toca para actualizar.',
 };
 
@@ -655,6 +663,7 @@ const de: Dict = {
   summary_fulltime: 'Abpfiff: {home} {homeScore} - {awayScore} {away}',
   lineups_unofficial: 'Die offiziellen Aufstellungen wurden noch nicht bekannt gegeben. Trainer: {home} vs {away}.',
   lineups_unavailable: 'Aufstellungen, Positionen und einzelne Spieler sind im kostenlosen Plan der verwendeten Datenquelle nicht verfügbar.',
+  lineups_not_published: 'Die Aufstellungen wurden von der Datenquelle für dieses Freundschaftsspiel noch nicht veröffentlicht.',
   lineups_coach: 'Trainer',
   lineups_born: 'geb.',
   lineups_former_player: 'Ehemaliger Spieler bei',
@@ -765,6 +774,7 @@ const de: Dict = {
   event_yellow_card_text: 'Gelbe Karte für {player} ({team})',
   event_red_card_text: 'Rote Karte für {player} ({team})',
   event_sub_text: '{playerOut} wird durch {playerIn} ersetzt ({team})',
+  event_unknown_player: 'ein Spieler',
   update_notification_body: 'Version {version} ist verfügbar. Zum Aktualisieren tippen.',
 };
 

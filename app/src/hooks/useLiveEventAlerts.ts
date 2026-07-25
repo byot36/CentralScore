@@ -23,12 +23,12 @@ function playGoalSound() {
 const SEEN_EVENTS_KEY = 'centralscore-seen-events';
 const POLL_MS = 3 * 60_000;
 
-function eventKey(fixtureId: number, e: { type: string; time: { elapsed: number }; player: { name: string } }) {
+function eventKey(fixtureId: number, e: { type: string; time: { elapsed: number }; player: { name: string | null } }) {
   return `${fixtureId}-${e.type}-${e.time.elapsed}-${e.player.name}`;
 }
 
-function eventText(e: { type: string; detail: string; player: { name: string }; team: { name: string } }) {
-  const vars = { player: e.player.name, team: e.team.name };
+function eventText(e: { type: string; detail: string; player: { name: string | null }; team: { name: string } }) {
+  const vars = { player: e.player.name ?? translate('event_unknown_player'), team: e.team.name };
   if (e.type === 'Goal') return translate('event_goal', vars);
   if (e.type === 'Card' && e.detail.toLowerCase().includes('red')) return translate('event_red_card', vars);
   if (e.type === 'Card') return translate('event_yellow_card', vars);

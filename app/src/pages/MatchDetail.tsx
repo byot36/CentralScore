@@ -166,7 +166,13 @@ export default function MatchDetail() {
       <div className="mt-4">
         {tab === 'summary' && <Summary events={match.events} status={match.status} />}
         {tab === 'lineups' && (
-          <Lineups home={match.homeLineup} away={match.awayLineup} homeName={match.homeTeam.name} awayName={match.awayTeam.name} />
+          <Lineups
+            home={match.homeLineup}
+            away={match.awayLineup}
+            homeName={match.homeTeam.name}
+            awayName={match.awayTeam.name}
+            isFriendly={match.competitionId === 'friendlies'}
+          />
         )}
         {tab === 'stats' && <Stats home={match.homeStats} away={match.awayStats} homeName={match.homeTeam.name} awayName={match.awayTeam.name} />}
         {tab === 'info' && (
@@ -207,17 +213,28 @@ function Summary({ events, status }: { events: import('../types').MatchEvent[]; 
   );
 }
 
-function Lineups({ home, away, homeName, awayName }: { home: Lineup; away: Lineup; homeName: string; awayName: string }) {
+function Lineups({
+  home,
+  away,
+  homeName,
+  awayName,
+  isFriendly,
+}: {
+  home: Lineup;
+  away: Lineup;
+  homeName: string;
+  awayName: string;
+  isFriendly?: boolean;
+}) {
   const { t } = useLanguage();
   if (home.starting.length === 0 && away.starting.length === 0) {
     const knownCoaches = home.coach.name !== 'Necunoscut' || away.coach.name !== 'Necunoscut';
-    return (
-      <p className="text-gray-400 text-sm">
-        {knownCoaches
-          ? t('lineups_unofficial', { home: home.coach.name, away: away.coach.name })
-          : t('lineups_unavailable')}
-      </p>
-    );
+    const message = knownCoaches
+      ? t('lineups_unofficial', { home: home.coach.name, away: away.coach.name })
+      : isFriendly
+        ? t('lineups_not_published')
+        : t('lineups_unavailable');
+    return <p className="text-gray-400 text-sm">{message}</p>;
   }
   return (
     <div className="grid sm:grid-cols-2 gap-6">

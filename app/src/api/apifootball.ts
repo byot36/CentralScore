@@ -10,7 +10,7 @@ import type { Match, Lineup, Player } from '../types';
 export interface FootballEvent {
   time: { elapsed: number; extra: number | null };
   team: { id: number; name: string };
-  player: { name: string };
+  player: { name: string | null };
   assist: { name: string | null };
   type: 'Goal' | 'Card' | 'subst' | 'Var';
   detail: string;
@@ -96,16 +96,20 @@ export function mapFootballEventsToMatchEvents(
     const isHome = e.team.id === homeTeamId;
     const minute = e.time.elapsed + (e.time.extra ?? 0);
     const team = isHome ? ('home' as const) : ('away' as const);
+    // API-Football lasă câteodată player.name gol (ex. autogoluri, date
+    // incomplete pentru meciuri mai mici) — arătăm un text neutru în loc de
+    // literalul "null".
+    const playerName = e.player.name ?? translate('event_unknown_player');
     if (e.type === 'Goal') {
       return {
         minute,
         type: 'goal' as const,
         team,
-        player: e.player.name,
+        player: playerName,
         assist: e.assist.name ?? undefined,
         text: e.assist.name
-          ? translate('event_goal_assist_text', { player: e.player.name, team: e.team.name, assist: e.assist.name })
-          : translate('event_goal_text', { player: e.player.name, team: e.team.name }),
+          ? translate('event_goal_assist_text', { player: playerName, team: e.team.name, assist: e.assist.name })
+          : translate('event_goal_text', { player: playerName, team: e.team.name }),
       };
     }
     if (e.type === 'Card') {
@@ -114,9 +118,9 @@ export function mapFootballEventsToMatchEvents(
         minute,
         type: isRed ? ('red' as const) : ('yellow' as const),
         team,
-        player: e.player.name,
+        player: playerName,
         text: translate(isRed ? 'event_red_card_text' : 'event_yellow_card_text', {
-          player: e.player.name,
+          player: playerName,
           team: e.team.name,
         }),
       };
@@ -126,11 +130,11 @@ export function mapFootballEventsToMatchEvents(
         minute,
         type: 'sub-in' as const,
         team,
-        player: e.player.name,
+        player: playerName,
         assist: e.assist.name ?? undefined,
         text: translate('event_sub_text', {
           playerOut: e.assist.name ?? '—',
-          playerIn: e.player.name,
+          playerIn: playerName,
           team: e.team.name,
         }),
       };
@@ -139,7 +143,7 @@ export function mapFootballEventsToMatchEvents(
       minute,
       type: 'comment' as const,
       team,
-      text: `${e.detail} — ${e.player.name} (${e.team.name})`,
+      text: `${e.detail} — ${playerName} (${e.team.name})`,
     };
   });
 }
