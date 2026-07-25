@@ -34,7 +34,9 @@ export default function Layout() {
   const update = useAppUpdateCheck();
 
   useEffect(() => {
-    requestNotificationPermission();
+    // Cererea de notificări e relevantă doar în aplicația nativă — pe web
+    // browser-ul ar afișa un popup de permisiune la fiecare vizită, deranjant.
+    if (isNative) requestNotificationPermission();
   }, []);
 
   useEffect(() => {

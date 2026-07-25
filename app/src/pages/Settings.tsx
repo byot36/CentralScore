@@ -66,28 +66,28 @@ export default function Settings() {
         </div>
       </section>
 
-      <section>
-        <h2 className="text-sm font-semibold text-gray-300 mb-2">{t('settings_notifications')}</h2>
-        <div className="bg-[#111827] border border-white/10 rounded-lg p-4 flex items-center justify-between">
-          <div>
-            <p className="text-sm">{t('settings_notif_fav')}</p>
-            <p className="text-xs text-gray-500 mt-1">
-              {t('settings_status')}: {statusLabel}
-            </p>
-            {isNative && (
+      {isNative && (
+        <section>
+          <h2 className="text-sm font-semibold text-gray-300 mb-2">{t('settings_notifications')}</h2>
+          <div className="bg-[#111827] border border-white/10 rounded-lg p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm">{t('settings_notif_fav')}</p>
+              <p className="text-xs text-gray-500 mt-1">
+                {t('settings_status')}: {statusLabel}
+              </p>
               <p className="text-xs text-gray-600 mt-1">{t('settings_native_note')}</p>
+            </div>
+            {notifStatus !== 'granted' && notifStatus !== 'unsupported' && (
+              <button
+                onClick={handleEnable}
+                className="text-xs bg-[#00c853] text-black font-medium px-3 py-1.5 rounded-full shrink-0"
+              >
+                {t('settings_enable')}
+              </button>
             )}
           </div>
-          {notifStatus !== 'granted' && notifStatus !== 'unsupported' && (
-            <button
-              onClick={handleEnable}
-              className="text-xs bg-[#00c853] text-black font-medium px-3 py-1.5 rounded-full shrink-0"
-            >
-              {t('settings_enable')}
-            </button>
-          )}
-        </div>
-      </section>
+        </section>
+      )}
 
       <section>
         <h2 className="text-sm font-semibold text-gray-300 mb-2">{t('settings_data_source')}</h2>
