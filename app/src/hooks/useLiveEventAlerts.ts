@@ -54,7 +54,12 @@ export function useLiveEventAlerts(
 
       try {
         if (fixtureIdRef.current == null) {
-          fixtureIdRef.current = await findLiveFixtureByTeams(liveFavMatch.homeTeam.name, liveFavMatch.awayTeam.name);
+          // Pentru amicale știm deja ID-ul real al fixture-ului (e chiar în
+          // id-ul meciului) — nu mai trebuie căutat după numele echipelor,
+          // care e fragil (poate rata sau nimeri alt meci cu nume similar).
+          fixtureIdRef.current = liveFavMatch.id.startsWith('af-friendly-')
+            ? Number(liveFavMatch.id.replace('af-friendly-', ''))
+            : await findLiveFixtureByTeams(liveFavMatch.homeTeam.name, liveFavMatch.awayTeam.name);
         }
         if (fixtureIdRef.current == null) return;
 

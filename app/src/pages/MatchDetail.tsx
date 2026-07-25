@@ -125,7 +125,7 @@ export default function MatchDetail() {
       </div>
 
       <div className="mt-4">
-        {tab === 'summary' && <Summary events={match.events} />}
+        {tab === 'summary' && <Summary events={match.events} status={match.status} />}
         {tab === 'lineups' && (
           <Lineups home={match.homeLineup} away={match.awayLineup} homeName={match.homeTeam.name} awayName={match.awayTeam.name} />
         )}
@@ -149,9 +149,12 @@ function eventIcon(type: string) {
   }
 }
 
-function Summary({ events }: { events: import('../types').MatchEvent[] }) {
+function Summary({ events, status }: { events: import('../types').MatchEvent[]; status: Match['status'] }) {
   const { t } = useLanguage();
-  if (events.length === 0) return <p className="text-gray-400 text-sm">{t('summary_not_started')}</p>;
+  if (events.length === 0) {
+    const key = status === 'scheduled' ? 'summary_not_started' : 'summary_no_events_yet';
+    return <p className="text-gray-400 text-sm">{t(key)}</p>;
+  }
   return (
     <ul className="space-y-3">
       {[...events].reverse().map((e, i) => (

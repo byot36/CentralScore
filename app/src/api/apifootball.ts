@@ -87,7 +87,7 @@ interface FriendlyFixture {
   fixture: {
     id: number;
     date: string;
-    status: { short: string };
+    status: { short: string; elapsed: number | null };
     venue: { name: string | null };
     referee: string | null;
   };
@@ -112,6 +112,7 @@ function mapFriendly(f: FriendlyFixture): Match {
     date: f.fixture.date.slice(0, 10),
     time: f.fixture.date.slice(11, 16),
     status: mapFriendlyStatus(f.fixture.status.short),
+    minute: f.fixture.status.elapsed ?? undefined,
     homeTeam: { id: `af-team-${f.teams.home.id}`, name: f.teams.home.name, logo: f.teams.home.logo },
     awayTeam: { id: `af-team-${f.teams.away.id}`, name: f.teams.away.name, logo: f.teams.away.logo },
     homeScore: f.goals.home ?? 0,
