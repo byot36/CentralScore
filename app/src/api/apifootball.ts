@@ -76,17 +76,26 @@ function mapFriendly(f: FriendlyFixture): Match {
   };
 }
 
-// Meciuri amicale internaționale — nu sunt disponibile pe football-data.org
-// (planul gratuit), doar prin API-Football (liga 5 = "World - Friendlies").
-// Cerem o singură dată la deschiderea aplicației (nu periodic), ca să nu
-// consumăm bugetul zilnic limitat.
+// Meciuri amicale — nu sunt disponibile pe football-data.org (planul
+// gratuit), doar prin API-Football. Liga 5 = "World - Friendlies" acoperă
+// doar amicalele naționalelor; amicalele de club (ex. Bayern - X) sunt într-o
+// ligă separată, 667 = "Club Friendlies" — de-aia nu apăreau meciurile de
+// club în listă. Cerem ambele ligi și le combinăm. O singură dată la
+// deschiderea aplicației (nu periodic), ca să nu consumăm bugetul zilnic.
 export async function fetchFriendliesToday(): Promise<Match[]> {
   const today = new Date().toISOString().slice(0, 10);
   const season = new Date().getFullYear();
-  const data = await apiGet<{ response: FriendlyFixture[] }>(
-    `/apifootball/fixtures?league=5&season=${season}&date=${today}`
-  );
-  return data.response.map(mapFriendly);
+  const [international, club] = await Promise.all([
+    apiGet<{ response: FriendlyFixture[] }>(`/apifootball/fixtures?league=5&season=${season}&date=${today}`),
+    apiGet<{ response: FriendlyFixture[] }>(`/apifootball/fixtures?league=667&season=${season}&date=${today}`),
+  ]);
+  const seen = new Set<number>();
+  const combined = [...international.response, ...club.response].filter((f) => {
+    if (seen.has(f.fixture.id)) return false;
+    seen.add(f.fixture.id);
+    return true;
+  });
+  return combined.map(mapFriendly);
 }
 
 export interface TransferEntry {
