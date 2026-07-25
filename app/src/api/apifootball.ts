@@ -207,10 +207,18 @@ interface PlayerStatsResponse {
 // a început), așa că încercăm și sezonul anterior înainte să renunțăm.
 export async function fetchPlayerStats(playerId: number): Promise<PlayerStats | null> {
   const currentYear = new Date().getFullYear();
+  const apiErrors: string[] = [];
   for (const season of [currentYear, currentYear - 1]) {
-    const data = await apiGet<{ response: PlayerStatsResponse[] }>(
+    const data = await apiGet<{ response: PlayerStatsResponse[]; errors: unknown }>(
       `/apifootball/players?id=${playerId}&season=${season}`
     );
+    // API-Football răspunde cu HTTP 200 chiar și când planul nu permite
+    // cererea (ex. sezon interzis pe planul gratuit) — eroarea reală vine în
+    // câmpul "errors", nu ca status HTTP, deci trebuie verificată explicit.
+    if (data.errors && (Array.isArray(data.errors) ? data.errors.length : Object.keys(data.errors).length)) {
+      apiErrors.push(typeof data.errors === 'object' ? JSON.stringify(data.errors) : String(data.errors));
+      continue;
+    }
     const entry = data.response[0];
     if (!entry) continue;
     const stat = entry.statistics.find((s) => s.games.appearences) ?? entry.statistics[0];
@@ -230,5 +238,6 @@ export async function fetchPlayerStats(playerId: number): Promise<PlayerStats | 
       rating: stat.games.rating ?? null,
     };
   }
+  if (apiErrors.length) throw new Error(apiErrors[0]);
   return null;
 }
