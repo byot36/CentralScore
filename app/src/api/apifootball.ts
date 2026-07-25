@@ -294,7 +294,12 @@ const TRACKED_CLUB_IDS = [
   85, 91, 79, 80, // Ligue 1: PSG, Monaco, Lille, Marseille
 ];
 
-const TRANSFERS_CACHE_KEY = 'centralscore-transfers-cache';
+// v2: schimbarea cheii invalidează un cache vechi posibil "blocat" pe un
+// rezultat degradat (ex. un singur club, din cauza unei limite de cereri
+// atinse la momentul cererii) — fără asta, cache-ul vechi s-ar fi păstrat
+// nemodificat până la expirarea celor 48h, chiar dacă între timp limita se
+// resetează.
+const TRANSFERS_CACHE_KEY = 'centralscore-transfers-cache-v2';
 const TRANSFERS_CACHE_TTL_MS = 48 * 3600_000;
 
 export async function fetchRecentTransfers(): Promise<TransferEntry[]> {
@@ -321,11 +326,12 @@ export async function fetchRecentTransfers(): Promise<TransferEntry[]> {
     )
   );
 
-  // Dacă mai mult de jumătate din cereri au eșuat (rețea instabilă sau
-  // limita zilnică de cereri atinsă), rezultatul ar fi incomplet și
-  // inconsistent față de vizita anterioară — păstrăm lista veche din cache
-  // în loc s-o suprascriem cu una degradată.
-  if (failures > TRACKED_CLUB_IDS.length / 2 && cachedEntries) {
+  // Dacă TOATE cererile eșuează (rețea căzută sau limita zilnică atinsă
+  // complet), păstrăm lista veche din cache în loc s-o suprascriem cu una
+  // goală. Dar dacă măcar câteva reușesc, folosim rezultatul nou — chiar
+  // parțial, e mai relevant decât un cache vechi blocat pe un singur club,
+  // care altfel ar rămâne "înghețat" așa până expiră (48h).
+  if (failures === TRACKED_CLUB_IDS.length && cachedEntries) {
     return cachedEntries;
   }
 
