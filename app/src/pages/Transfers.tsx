@@ -59,10 +59,11 @@ function PlayerStatsModal({ playerId, onClose }: { playerId: number; onClose: ()
 
         {stats && (
           <div>
-            <div className="flex items-center gap-3 mb-4">
+            <div className="flex items-center gap-3 mb-2">
               {stats.photo && <img src={stats.photo} alt={stats.name} className="w-14 h-14 rounded-full object-cover border border-white/10" />}
               <div className="font-semibold">{stats.name}</div>
             </div>
+            <p className="text-xs text-gray-500 mb-4">{t('player_stats_season_note', { season: stats.season })}</p>
             <div className="space-y-1.5 text-sm">
               {rows.map(([label, value]) => (
                 value !== null && value !== undefined && value !== '' ? (

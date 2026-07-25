@@ -177,6 +177,7 @@ export async function fetchRecentTransfers(): Promise<TransferEntry[]> {
 }
 
 export interface PlayerStats {
+  season: number;
   name: string;
   photo: string;
   age: number | null;
@@ -206,9 +207,14 @@ interface PlayerStatsResponse {
 // să nu aibă încă statistici (jucătorul tocmai s-a transferat, sezonul abia
 // a început), așa că încercăm și sezonul anterior înainte să renunțăm.
 export async function fetchPlayerStats(playerId: number): Promise<PlayerStats | null> {
-  const currentYear = new Date().getFullYear();
+  // Cheia API-Football gratuită folosită aici are acces la statistici de
+  // jucători doar pentru sezoanele 2022-2024 (confirmat de eroarea reală a
+  // API-ului: "Free plans do not have access to this season, try from 2022
+  // to 2024."). Sezonul curent/recent necesită un plan plătit. Afișăm deci
+  // cele mai recente statistici disponibile pe planul gratuit (2024), nu
+  // sezonul curent — mai bine date reale mai vechi decât date inventate.
   const apiErrors: string[] = [];
-  for (const season of [currentYear, currentYear - 1]) {
+  for (const season of [2024, 2023, 2022]) {
     const data = await apiGet<{ response: PlayerStatsResponse[]; errors: unknown }>(
       `/apifootball/players?id=${playerId}&season=${season}`
     );
@@ -224,6 +230,7 @@ export async function fetchPlayerStats(playerId: number): Promise<PlayerStats | 
     const stat = entry.statistics.find((s) => s.games.appearences) ?? entry.statistics[0];
     if (!stat) continue;
     return {
+      season,
       name: entry.player.name,
       photo: entry.player.photo,
       age: entry.player.age,
