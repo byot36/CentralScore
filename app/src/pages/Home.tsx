@@ -106,8 +106,8 @@ export default function Home() {
           <p className="text-sm text-gray-400">{t('search_no_results')}</p>
         ) : (
           <div className="grid gap-2 sm:grid-cols-2">
-            {searchResults.map((m) => (
-              <MatchCard key={m.id} match={m} />
+            {searchResults.map((m, i) => (
+              <MatchCard key={m.id} match={m} index={i} />
             ))}
           </div>
         )
@@ -137,8 +137,8 @@ export default function Home() {
                 </h2>
               )}
               <div className="grid gap-2 sm:grid-cols-2">
-                {(effectiveSelection ? compMatches : compMatches.slice(0, MAX_PER_COMPETITION)).map((m) => (
-                  <MatchCard key={m.id} match={m} />
+                {(effectiveSelection ? compMatches : compMatches.slice(0, MAX_PER_COMPETITION)).map((m, i) => (
+                  <MatchCard key={m.id} match={m} index={i} />
                 ))}
               </div>
             </section>

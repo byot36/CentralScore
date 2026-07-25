@@ -61,9 +61,10 @@ export default function Standings() {
                   return (
                     <tr
                       key={r.team.id}
-                      className={`border-t border-white/5 hover:bg-white/5 transition-colors relative ${
+                      className={`cs-fade-up border-t border-white/5 hover:bg-white/5 transition-colors relative ${
                         idx % 2 === 1 ? 'bg-white/[0.02]' : ''
                       }`}
+                      style={{ animationDelay: `${Math.min(idx, 15) * 25}ms` }}
                     >
                       <td className={`py-2.5 pl-4 pr-2 text-gray-400 relative ${isTop ? 'before:absolute before:left-0 before:top-0 before:bottom-0 before:w-0.5 before:bg-[#00c853]' : isRelegation ? 'before:absolute before:left-0 before:top-0 before:bottom-0 before:w-0.5 before:bg-red-500/60' : ''}`}>
                         {r.position}

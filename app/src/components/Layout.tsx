@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Link, Outlet, useLocation } from 'react-router-dom';
 import { isLiveApiConfigured } from '../api/client';
 import { useFavorites } from '../context/FavoritesContext';
@@ -28,6 +28,19 @@ export default function Layout() {
     { to: '/settings', label: t('nav_settings') },
   ];
   const [menuOpen, setMenuOpen] = useState(false);
+  const [bellRing, setBellRing] = useState(false);
+  const prevUnreadRef = useRef(unreadCount);
+
+  useEffect(() => {
+    if (unreadCount > prevUnreadRef.current) {
+      setBellRing(true);
+      const timeout = setTimeout(() => setBellRing(false), 600);
+      prevUnreadRef.current = unreadCount;
+      return () => clearTimeout(timeout);
+    }
+    prevUnreadRef.current = unreadCount;
+  }, [unreadCount]);
+
   useFavoriteAlerts(matches, favorites, addNotification);
   useLiveEventAlerts(matches, favorites, addNotification);
   usePushNotifications(matches, favorites);
@@ -107,12 +120,12 @@ export default function Layout() {
                 </Link>
               ))}
             </nav>
-            <Link to="/notifications" className="relative p-1" aria-label={t('nav_notifications')}>
-              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+            <Link to="/notifications" className="relative p-1 active:scale-90 transition-transform" aria-label={t('nav_notifications')}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={bellRing ? 'cs-bell-ring' : ''}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 17h5l-1.4-1.4A2 2 0 0 1 18 14.2V11a6 6 0 1 0-12 0v3.2a2 2 0 0 1-.6 1.4L4 17h5m6 0v1a3 3 0 1 1-6 0v-1m6 0H9" />
               </svg>
               {unreadCount > 0 && (
-                <span className="absolute -top-1 -right-1 bg-[#00c853] text-black text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center">
+                <span className="absolute -top-1 -right-1 bg-[#00c853] text-black text-[10px] font-bold rounded-full w-4 h-4 flex items-center justify-center animate-[cs-fade-up_0.3s_ease-out]">
                   {unreadCount > 9 ? '9+' : unreadCount}
                 </span>
               )}
@@ -163,7 +176,9 @@ export default function Layout() {
         )}
       </header>
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-6">
-        <Outlet />
+        <div key={location.pathname} className="cs-page-in">
+          <Outlet />
+        </div>
       </main>
       <footer className="border-t border-white/10 text-center text-xs text-gray-500 py-4">
         {t('footer_copyright')}{import.meta.env.VITE_APP_VERSION ? ` · v${import.meta.env.VITE_APP_VERSION}` : ''}

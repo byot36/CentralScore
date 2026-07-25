@@ -20,8 +20,8 @@ export default function Favorites() {
         </p>
       ) : (
         <div className="grid gap-2 sm:grid-cols-2">
-          {favMatches.map((m) => (
-            <MatchCard key={m.id} match={m} />
+          {favMatches.map((m, i) => (
+            <MatchCard key={m.id} match={m} index={i} />
           ))}
         </div>
       )}

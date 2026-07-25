@@ -41,3 +41,65 @@ a {
   background: var(--cs-border);
   border-radius: 4px;
 }
+
+/* Intrare treptată pentru liste de carduri (meciuri, rânduri de clasament) */
+@keyframes cs-fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.cs-fade-up {
+  animation: cs-fade-up 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* Puls scurt când scorul unui meci se schimbă */
+@keyframes cs-score-pop {
+  0% {
+    transform: scale(1);
+    color: var(--cs-green);
+  }
+  40% {
+    transform: scale(1.35);
+    color: var(--cs-green);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
+.cs-score-pop {
+  animation: cs-score-pop 0.6s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Clopoțel de notificări — se scutură scurt la o notificare nouă */
+@keyframes cs-bell-ring {
+  0%, 100% { transform: rotate(0deg); }
+  15% { transform: rotate(-15deg); }
+  30% { transform: rotate(12deg); }
+  45% { transform: rotate(-10deg); }
+  60% { transform: rotate(6deg); }
+  75% { transform: rotate(-3deg); }
+}
+.cs-bell-ring {
+  animation: cs-bell-ring 0.6s ease-in-out;
+  transform-origin: top center;
+}
+
+/* Tranziție de pagină la navigare */
+@keyframes cs-page-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.cs-page-in {
+  animation: cs-page-in 0.25s ease-out both;
+}
