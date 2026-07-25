@@ -91,7 +91,7 @@ export default function MatchDetail() {
             return { ...prev, events: [...markers, ...mapped] };
           });
         })
-        .catch(() => {});
+        .catch((err) => console.error('Nu am putut încărca evenimentele meciului:', err));
     }
 
     refetchEvents();
@@ -112,7 +112,7 @@ export default function MatchDetail() {
         if (!lineups) return;
         setMatch((prev) => (prev ? { ...prev, homeLineup: lineups.home, awayLineup: lineups.away } : prev));
       })
-      .catch(() => {});
+      .catch((err) => console.error('Nu am putut încărca aliniațiile meciului:', err));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [match?.id]);
 
