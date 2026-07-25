@@ -98,7 +98,12 @@ export function MatchesProvider({ children }: { children: ReactNode }) {
           return next;
         });
       })
-      .catch(() => {});
+      .catch((err) => {
+        // Eșec silențios pentru UX (nu blocăm restul aplicației), dar logăm
+        // ca să putem diagnostica dacă amicalele lipsesc din cauza unei
+        // erori reale (rețea, API) și nu pentru că azi chiar nu sunt.
+        console.error('Nu am putut încărca amicalele de azi:', err);
+      });
 
     // Periodic: doar meciurile de azi, ca să actualizăm scor/status live
     // fără să reinterogăm întregul sezon de fiecare dată.
