@@ -32,7 +32,22 @@ export default function MatchDetail() {
   }, [id, mockMatch, knownMatch]);
 
   useEffect(() => {
-    if (knownMatch) setMatch(knownMatch);
+    // knownMatch vine din contextul global, care se reîmprospătează
+    // periodic (scor/minut live) — dar acea versiune nu are aliniațiile și
+    // evenimentele cerute separat pe pagina asta. O simplă suprascriere
+    // le-ar șterge la fiecare refresh (60-90s). Preluăm scorul/statusul
+    // proaspăt, dar păstrăm aliniațiile/evenimentele deja cerute local.
+    if (!knownMatch) return;
+    setMatch((prev) =>
+      prev && prev.id === knownMatch.id
+        ? {
+            ...knownMatch,
+            events: prev.events.length > 0 ? prev.events : knownMatch.events,
+            homeLineup: prev.homeLineup.starting.length > 0 ? prev.homeLineup : knownMatch.homeLineup,
+            awayLineup: prev.awayLineup.starting.length > 0 ? prev.awayLineup : knownMatch.awayLineup,
+          }
+        : knownMatch
+    );
   }, [knownMatch]);
 
   useEffect(() => {
