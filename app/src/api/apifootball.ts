@@ -140,36 +140,44 @@ const FRIENDLY_WATCH_CLUB_IDS = [
 ];
 
 // Meciuri amicale — nu sunt disponibile pe football-data.org (planul
-// gratuit), doar prin API-Football. Combinăm 3 surse: liga 5 ("World -
-// Friendlies", naționale), liga 667 ("Club Friendlies") și programul
-// cluburilor mari urmărite explicit (vezi mai sus) — filtrat după numele
-// ligii. Am încercat și "cere toate meciurile din lume de azi, fără filtru"
-// — răspunsul e uriaș și poate depăși timeout-ul, făcând amicalele să
-// dispară complet, de-aia folosim cereri direcționate. Fereastra e de 7
-// zile (azi + următoarele 6), ca amicalele viitoare să fie vizibile din timp.
+// gratuit), doar prin API-Football. Ca să prindem amicale de la *orice*
+// club (Premier League, La Liga, Bundesliga etc.), nu doar de la o listă
+// fixă de cluburi mari, cerem *toate* meciurile din ziua curentă (un singur
+// apel) și filtrăm client-side orice ligă al cărei nume conține "friendl"
+// — prinde orice amical real, indiferent de club. Pentru ziua curentă
+// riscul de timeout e acceptabil (o singură zi, nu 7); pentru zilele
+// următoare (unde volumul ar fi și mai mare) ne limităm la sursele
+// direcționate (ligile 5/667 + cluburile mari urmărite), mai ieftine.
 export async function fetchFriendliesToday(): Promise<Match[]> {
-  const from = new Date().toISOString().slice(0, 10);
+  const today = new Date().toISOString().slice(0, 10);
+  const tomorrow = new Date(Date.now() + 24 * 3600_000).toISOString().slice(0, 10);
   const to = new Date(Date.now() + 6 * 24 * 3600_000).toISOString().slice(0, 10);
   const season = new Date().getFullYear();
-  const [international, club, ...clubSchedules] = await Promise.all([
-    apiGet<{ response: FriendlyFixture[] }>(`/apifootball/fixtures?league=5&season=${season}&from=${from}&to=${to}`),
-    apiGet<{ response: FriendlyFixture[] }>(`/apifootball/fixtures?league=667&season=${season}&from=${from}&to=${to}`),
+
+  const [allToday, international, club, ...clubSchedules] = await Promise.all([
+    apiGet<{ response: FriendlyFixture[] }>(`/apifootball/fixtures?date=${today}`).catch(() => ({ response: [] })),
+    apiGet<{ response: FriendlyFixture[] }>(`/apifootball/fixtures?league=5&season=${season}&from=${tomorrow}&to=${to}`),
+    apiGet<{ response: FriendlyFixture[] }>(`/apifootball/fixtures?league=667&season=${season}&from=${tomorrow}&to=${to}`),
     ...FRIENDLY_WATCH_CLUB_IDS.map((id) =>
-      apiGet<{ response: FriendlyFixture[] }>(`/apifootball/fixtures?team=${id}&from=${from}&to=${to}`).catch(
+      apiGet<{ response: FriendlyFixture[] }>(`/apifootball/fixtures?team=${id}&from=${tomorrow}&to=${to}`).catch(
         () => ({ response: [] })
       )
     ),
   ]);
+
+  const todayFriendlies = allToday.response.filter((f) => f.league.name.toLowerCase().includes('friendl'));
   const fromClubSchedules = clubSchedules
     .flatMap((r) => r.response)
     .filter((f) => f.league.name.toLowerCase().includes('friendl'));
 
   const seen = new Set<number>();
-  const combined = [...international.response, ...club.response, ...fromClubSchedules].filter((f) => {
-    if (seen.has(f.fixture.id)) return false;
-    seen.add(f.fixture.id);
-    return true;
-  });
+  const combined = [...todayFriendlies, ...international.response, ...club.response, ...fromClubSchedules].filter(
+    (f) => {
+      if (seen.has(f.fixture.id)) return false;
+      seen.add(f.fixture.id);
+      return true;
+    }
+  );
   return combined.map(mapFriendly);
 }
 
