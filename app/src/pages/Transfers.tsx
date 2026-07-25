@@ -20,7 +20,7 @@ function PlayerStatsModal({ playerId, onClose }: { playerId: number; onClose: ()
     setError(null);
     fetchPlayerStats(playerId)
       .then(setStats)
-      .catch(() => setError(t('player_stats_error')));
+      .catch((err) => setError(`${t('player_stats_error')} (${err.message})`));
   }, [playerId]);
 
   const rows: [string, string | number | null][] = stats

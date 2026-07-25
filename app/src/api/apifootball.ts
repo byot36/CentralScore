@@ -119,15 +119,15 @@ interface TransferPlayerResponse {
 // transferurile din ultimele 30 de zile. Cererile sunt cache-uite 24h în
 // localStorage ca să nu consumăm bugetul zilnic limitat (100 cereri/zi).
 const TRACKED_CLUB_IDS = [
-  33, 40, 42, 49, 50, 47, // Man United, Liverpool, Arsenal, Chelsea, Man City, Tottenham
-  541, 529, 530, 548, // Real Madrid, Barcelona, Atletico Madrid, Real Sociedad
-  505, 496, 489, // Inter, Juventus, AC Milan
-  157, 165, // Bayern Munich, Borussia Dortmund
-  85, 91, // PSG, Monaco
+  33, 40, 42, 50, // Man United, Liverpool, Arsenal, Man City
+  541, 529, // Real Madrid, Barcelona
+  505, 489, // Inter, AC Milan
+  157, // Bayern Munich
+  85, // PSG
 ];
 
 const TRANSFERS_CACHE_KEY = 'centralscore-transfers-cache';
-const TRANSFERS_CACHE_TTL_MS = 24 * 3600_000;
+const TRANSFERS_CACHE_TTL_MS = 48 * 3600_000;
 
 export async function fetchRecentTransfers(): Promise<TransferEntry[]> {
   try {
