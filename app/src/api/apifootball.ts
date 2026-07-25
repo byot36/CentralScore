@@ -43,6 +43,7 @@ interface FriendlyFixture {
     venue: { name: string | null };
     referee: string | null;
   };
+  league: { name: string };
   teams: {
     home: { id: number; name: string; logo: string };
     away: { id: number; name: string; logo: string };
@@ -77,25 +78,19 @@ function mapFriendly(f: FriendlyFixture): Match {
 }
 
 // Meciuri amicale — nu sunt disponibile pe football-data.org (planul
-// gratuit), doar prin API-Football. Liga 5 = "World - Friendlies" acoperă
-// doar amicalele naționalelor; amicalele de club (ex. Bayern - X) sunt într-o
-// ligă separată, 667 = "Club Friendlies" — de-aia nu apăreau meciurile de
-// club în listă. Cerem ambele ligi și le combinăm. O singură dată la
-// deschiderea aplicației (nu periodic), ca să nu consumăm bugetul zilnic.
+// gratuit), doar prin API-Football. Amicalele (naționale sau de club) sunt
+// împărțite pe multe ligi diferite ("World - Friendlies", "Club Friendlies"
+// etc.) — în loc să ghicim fiecare id de ligă și să ratăm unele (ex.
+// amicalele de club nu apăreau), cerem *toate* meciurile din ziua curentă
+// (un singur apel) și filtrăm client-side orice ligă al cărei nume conține
+// "Friendlies" — prinde orice tip de amical, real, indiferent de ligă.
+// O singură dată la deschiderea aplicației (nu periodic), ca să nu
+// consumăm bugetul zilnic.
 export async function fetchFriendliesToday(): Promise<Match[]> {
   const today = new Date().toISOString().slice(0, 10);
-  const season = new Date().getFullYear();
-  const [international, club] = await Promise.all([
-    apiGet<{ response: FriendlyFixture[] }>(`/apifootball/fixtures?league=5&season=${season}&date=${today}`),
-    apiGet<{ response: FriendlyFixture[] }>(`/apifootball/fixtures?league=667&season=${season}&date=${today}`),
-  ]);
-  const seen = new Set<number>();
-  const combined = [...international.response, ...club.response].filter((f) => {
-    if (seen.has(f.fixture.id)) return false;
-    seen.add(f.fixture.id);
-    return true;
-  });
-  return combined.map(mapFriendly);
+  const data = await apiGet<{ response: FriendlyFixture[] }>(`/apifootball/fixtures?date=${today}`);
+  const friendlies = data.response.filter((f) => f.league.name.toLowerCase().includes('friendlies'));
+  return friendlies.map(mapFriendly);
 }
 
 export interface TransferEntry {
