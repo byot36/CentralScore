@@ -11,7 +11,7 @@ export async function apiGet<T>(path: string): Promise<T> {
   // Timeout de siguranță — fără el, o cerere agățată (rețea instabilă etc.)
   // ar bloca la infinit ecranul de "Se încarcă meciurile...".
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 15_000);
+  const timeout = setTimeout(() => controller.abort(), 25_000);
   try {
     const res = await fetch(`${API_BASE}${path}`, { signal: controller.signal });
     if (!res.ok) throw new Error(`Eroare API: ${res.status}`);

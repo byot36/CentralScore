@@ -85,25 +85,29 @@ export function MatchesProvider({ children }: { children: ReactNode }) {
       })
       .finally(() => setLoading(false));
 
-    // Amicalele internaționale de azi — cerere unică, de la API-Football (nu
-    // sunt pe football-data.org), ca să nu irosim bugetul zilnic limitat.
-    fetchFriendliesToday()
-      .then((friendlies) => {
-        if (friendlies.length === 0) return;
-        setMatches((prev) => {
-          const byId = new Map(prev.map((m) => [m.id, m]));
-          for (const m of friendlies) byId.set(m.id, m);
-          const next = Array.from(byId.values());
-          saveCachedMatches(next);
-          return next;
+    // Amicalele — cerere unică (cu un reîncercări dacă eșuează), de la
+    // API-Football (nu sunt pe football-data.org). Interogarea acoperă 7
+    // zile, deci răspunsul e mai mare/mai lent decât restul cererilor — un
+    // singur eșec de rețea/timeout le poate face să dispară complet dintr-o
+    // reîncărcare a paginii, așa că reîncercăm o dată înainte să renunțăm.
+    function loadFriendlies(attempt = 1) {
+      fetchFriendliesToday()
+        .then((friendlies) => {
+          if (friendlies.length === 0) return;
+          setMatches((prev) => {
+            const byId = new Map(prev.map((m) => [m.id, m]));
+            for (const m of friendlies) byId.set(m.id, m);
+            const next = Array.from(byId.values());
+            saveCachedMatches(next);
+            return next;
+          });
+        })
+        .catch((err) => {
+          console.error('Nu am putut încărca amicalele:', err);
+          if (attempt < 2) setTimeout(() => loadFriendlies(attempt + 1), 4000);
         });
-      })
-      .catch((err) => {
-        // Eșec silențios pentru UX (nu blocăm restul aplicației), dar logăm
-        // ca să putem diagnostica dacă amicalele lipsesc din cauza unei
-        // erori reale (rețea, API) și nu pentru că azi chiar nu sunt.
-        console.error('Nu am putut încărca amicalele de azi:', err);
-      });
+    }
+    loadFriendlies();
 
     // Periodic: doar meciurile de azi, ca să actualizăm scor/status live
     // fără să reinterogăm întregul sezon de fiecare dată.
